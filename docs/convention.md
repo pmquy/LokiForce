@@ -140,3 +140,21 @@ Sử dụng `response.Fail(c, statusCode, errorMsg)`. Định dạng JSON đầu
   * `slog.Warn`: Cảnh báo các sự cố không nghiêm trọng (ví dụ: request bị từ chối do dữ liệu sai định dạng).
   * `slog.Error`: Ghi nhận các lỗi nghiêm trọng ảnh hưởng đến hệ thống (ví dụ: lỗi kết nối cơ sở dữ liệu, lỗi Usecase execution).
 
+---
+
+## 9. Thư Mục Templates Mẫu (Template Scaffold Folders)
+
+* **Tránh viết cứng mã nguồn mẫu:** Để tránh việc viết cứng (hardcode) chuỗi nội dung file mã nguồn mẫu trong code Go, chúng ta sử dụng thư mục `templates/` ở gốc dự án.
+* **Cấu trúc thư mục mẫu:**
+  ```text
+  templates/
+  ├── golang/          # Chứa main.go, go.mod, Dockerfile mẫu
+  └── nodejs/          # Chứa index.js, package.json, Dockerfile mẫu
+  ```
+* **Luồng hoạt động & Tích hợp Git:**
+  * Thư mục mẫu được lưu cố định trong ứng dụng để tránh truy vấn DB không cần thiết.
+  * Khi gọi API tạo Service, hệ thống tự động sinh mã nguồn khung vào một thư mục tạm từ thư mục mẫu tương ứng.
+  * Hệ thống sử dụng dịch vụ `VersionControl` để tạo Repository từ xa (ví dụ: trên GitHub thông qua GitHub API sử dụng Personal Access Token).
+  * Mã nguồn khung cục bộ được tự động khởi tạo Git (`git init`), commit và push (`git push`) lên Repository từ xa, sau đó xoá sạch thư mục tạm.
+  * URL của Repository mới được lưu lại vào cơ sở dữ liệu làm thông tin tham chiếu cho Service.
+
