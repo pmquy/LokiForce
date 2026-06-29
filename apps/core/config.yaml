@@ -11,3 +11,8 @@ database:
 
 jwt:
   secret: "super_secret_signing_key_for_lokiforce"
+
+github:
+  token: ""
+  owner: "lokiforce-dev"
+  prefix: "lkf-"

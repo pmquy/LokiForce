@@ -16,6 +16,10 @@ import (
 	application3 "lokiforce.com/apps/core/internal/project/application"
 	http3 "lokiforce.com/apps/core/internal/project/delivery/http"
 	repository3 "lokiforce.com/apps/core/internal/project/infrastructure/repository"
+	application5 "lokiforce.com/apps/core/internal/service/application"
+	http5 "lokiforce.com/apps/core/internal/service/delivery/http"
+	repository5 "lokiforce.com/apps/core/internal/service/infrastructure/repository"
+	"lokiforce.com/apps/core/internal/service/infrastructure/versioncontrol"
 	application4 "lokiforce.com/apps/core/internal/team/application"
 	http4 "lokiforce.com/apps/core/internal/team/delivery/http"
 	repository4 "lokiforce.com/apps/core/internal/team/infrastructure/repository"
@@ -45,7 +49,11 @@ func InitializeApp(cfg *config.Config) (*Handlers, error) {
 	postgresTeamRepository := repository4.NewPostgresTeamRepository(db)
 	teamUsecase := application4.NewTeamUsecase(postgresTeamRepository)
 	teamHandler := http4.NewTeamHandler(teamUsecase)
-	handlers := NewHandlers(userHandler, orgHandler, projectHandler, teamHandler)
+	postgresServiceRepository := repository5.NewPostgresServiceRepository(db)
+	versionControl := versioncontrol.NewGitHubVersionControl(cfg)
+	serviceUsecase := application5.NewServiceUsecase(postgresServiceRepository, versionControl)
+	serviceHandler := http5.NewServiceHandler(serviceUsecase)
+	handlers := NewHandlers(userHandler, orgHandler, projectHandler, teamHandler, serviceHandler)
 	return handlers, nil
 }
 
@@ -66,6 +74,9 @@ func ProvideDB(cfg *config.Config) (*gorm.DB, error) {
 		return nil, err
 	}
 	if err := repository4.Migrate(db); err != nil {
+		return nil, err
+	}
+	if err := repository5.Migrate(db); err != nil {
 		return nil, err
 	}
 	return db, nil

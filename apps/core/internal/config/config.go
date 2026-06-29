@@ -11,6 +11,7 @@ type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	Database DatabaseConfig `mapstructure:"database"`
 	JWT      JWTConfig      `mapstructure:"jwt"`
+	GitHub   GitHubConfig   `mapstructure:"github"`
 }
 
 type ServerConfig struct {
@@ -28,6 +29,12 @@ type DatabaseConfig struct {
 
 type JWTConfig struct {
 	Secret string `mapstructure:"secret"`
+}
+
+type GitHubConfig struct {
+	Token  string `mapstructure:"token"`
+	Owner  string `mapstructure:"owner"`
+	Prefix string `mapstructure:"prefix"`
 }
 
 func (c *Config) GetDatabaseURL() string {
@@ -49,6 +56,9 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("database.dbname", "lokiforce")
 	viper.SetDefault("database.sslmode", "disable")
 	viper.SetDefault("jwt.secret", "super_secret_signing_key_for_lokiforce")
+	viper.SetDefault("github.token", "")
+	viper.SetDefault("github.owner", "lokiforce-dev")
+	viper.SetDefault("github.prefix", "lkf-")
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Printf("Warning: failed to read config file: %v. Using defaults.", err)

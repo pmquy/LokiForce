@@ -21,6 +21,13 @@ import (
 	projectDomain "lokiforce.com/apps/core/internal/project/domain"
 	projectRepo "lokiforce.com/apps/core/internal/project/infrastructure/repository"
 
+	// Service
+	serviceApp "lokiforce.com/apps/core/internal/service/application"
+	serviceHttp "lokiforce.com/apps/core/internal/service/delivery/http"
+	serviceDomain "lokiforce.com/apps/core/internal/service/domain"
+	serviceRepo "lokiforce.com/apps/core/internal/service/infrastructure/repository"
+	serviceVc "lokiforce.com/apps/core/internal/service/infrastructure/versioncontrol"
+
 	// Team
 	teamApp "lokiforce.com/apps/core/internal/team/application"
 	teamHttp "lokiforce.com/apps/core/internal/team/delivery/http"
@@ -52,13 +59,15 @@ func ProvideDB(cfg *config.Config) (*gorm.DB, error) {
 	if err := teamRepo.Migrate(db); err != nil {
 		return nil, err
 	}
+	if err := serviceRepo.Migrate(db); err != nil {
+		return nil, err
+	}
 	return db, nil
 }
 
 func ProvideTokenService(cfg *config.Config) application.TokenService {
 	return jwt.NewJWTService(cfg.JWT.Secret)
 }
-
 
 func InitializeApp(cfg *config.Config) (*Handlers, error) {
 	wire.Build(
@@ -88,6 +97,13 @@ func InitializeApp(cfg *config.Config) (*Handlers, error) {
 		wire.Bind(new(teamDomain.TeamRepository), new(*teamRepo.PostgresTeamRepository)),
 		teamApp.NewTeamUsecase,
 		teamHttp.NewTeamHandler,
+
+		// Service
+		serviceRepo.NewPostgresServiceRepository,
+		wire.Bind(new(serviceDomain.ServiceRepository), new(*serviceRepo.PostgresServiceRepository)),
+		serviceVc.NewGitHubVersionControl,
+		serviceApp.NewServiceUsecase,
+		serviceHttp.NewServiceHandler,
 
 		NewHandlers,
 	)

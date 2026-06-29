@@ -15,6 +15,7 @@ import (
 	"lokiforce.com/apps/core/internal/config"
 	orgHttp "lokiforce.com/apps/core/internal/organization/delivery/http"
 	projectHttp "lokiforce.com/apps/core/internal/project/delivery/http"
+	serviceHttp "lokiforce.com/apps/core/internal/service/delivery/http"
 	teamHttp "lokiforce.com/apps/core/internal/team/delivery/http"
 	userHttp "lokiforce.com/apps/core/internal/user/delivery/http"
 	"lokiforce.com/apps/core/pkg/middleware"
@@ -25,6 +26,7 @@ type Handlers struct {
 	OrgHandler  *orgHttp.OrgHandler
 	ProjHandler *projectHttp.ProjectHandler
 	TeamHandler *teamHttp.TeamHandler
+	SvcHandler  *serviceHttp.ServiceHandler
 }
 
 func NewHandlers(
@@ -32,12 +34,14 @@ func NewHandlers(
 	org *orgHttp.OrgHandler,
 	proj *projectHttp.ProjectHandler,
 	team *teamHttp.TeamHandler,
+	svc *serviceHttp.ServiceHandler,
 ) *Handlers {
 	return &Handlers{
 		UserHandler: user,
 		OrgHandler:  org,
 		ProjHandler: proj,
 		TeamHandler: team,
+		SvcHandler:  svc,
 	}
 }
 
@@ -62,10 +66,11 @@ func main() {
 	authMiddleware := middleware.AuthMiddleware(tokenService)
 
 	// Register routes
-	userHttp.RegisterUserRoutes(apiV1, handlers.UserHandler, tokenService)
+	userHttp.RegisterUserRoutes(apiV1, handlers.UserHandler, authMiddleware, tokenService)
 	orgHttp.RegisterOrgRoutes(apiV1, handlers.OrgHandler, authMiddleware)
 	projectHttp.RegisterProjectRoutes(apiV1, handlers.ProjHandler, authMiddleware)
 	teamHttp.RegisterTeamRoutes(apiV1, handlers.TeamHandler, authMiddleware)
+	serviceHttp.RegisterServiceRoutes(apiV1, handlers.SvcHandler, authMiddleware)
 
 	// Configure HTTP server
 	portStr := fmt.Sprintf("%d", cfg.Server.Port)
