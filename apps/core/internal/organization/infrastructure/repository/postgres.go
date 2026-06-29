@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 
 	"gorm.io/gorm"
@@ -30,14 +31,14 @@ func Migrate(db *gorm.DB) error {
 	return db.AutoMigrate(&orgModel{})
 }
 
-func (r *PostgresOrgRepository) Create(org *domain.Organization) error {
+func (r *PostgresOrgRepository) Create(ctx context.Context, org *domain.Organization) error {
 	m := toModel(org)
-	return r.db.Create(m).Error
+	return r.db.WithContext(ctx).Create(m).Error
 }
 
-func (r *PostgresOrgRepository) GetByID(id string) (*domain.Organization, error) {
+func (r *PostgresOrgRepository) GetByID(ctx context.Context, id string) (*domain.Organization, error) {
 	var m orgModel
-	if err := r.db.First(&m, "id = ?", id).Error; err != nil {
+	if err := r.db.WithContext(ctx).First(&m, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("organization not found")
 		}
@@ -46,9 +47,9 @@ func (r *PostgresOrgRepository) GetByID(id string) (*domain.Organization, error)
 	return toDomain(&m), nil
 }
 
-func (r *PostgresOrgRepository) ListByOwner(ownerID string) ([]*domain.Organization, error) {
+func (r *PostgresOrgRepository) ListByOwner(ctx context.Context, ownerID string) ([]*domain.Organization, error) {
 	var models []orgModel
-	if err := r.db.Find(&models, "owner_id = ?", ownerID).Error; err != nil {
+	if err := r.db.WithContext(ctx).Find(&models, "owner_id = ?", ownerID).Error; err != nil {
 		return nil, err
 	}
 
@@ -59,8 +60,8 @@ func (r *PostgresOrgRepository) ListByOwner(ownerID string) ([]*domain.Organizat
 	return orgs, nil
 }
 
-func (r *PostgresOrgRepository) Delete(id string) error {
-	res := r.db.Delete(&orgModel{}, "id = ?", id)
+func (r *PostgresOrgRepository) Delete(ctx context.Context, id string) error {
+	res := r.db.WithContext(ctx).Delete(&orgModel{}, "id = ?", id)
 	if res.Error != nil {
 		return res.Error
 	}

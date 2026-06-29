@@ -1,6 +1,7 @@
 package application_test
 
 import (
+	"context"
 	"testing"
 
 	"lokiforce.com/apps/core/internal/user/application"
@@ -20,7 +21,7 @@ func TestRegisterUser_ValidInput(t *testing.T) {
 		Password: "password123",
 	}
 
-	output, err := usecase.RegisterUser(input)
+	output, err := usecase.RegisterUser(context.Background(), input)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -40,7 +41,7 @@ func TestRegisterUser_InvalidPassword(t *testing.T) {
 		Email:    "vinh@gmail.com",
 		Password: "short",
 	}
-	_, err := usecase.RegisterUser(input)
+	_, err := usecase.RegisterUser(context.Background(), input)
 	if err != domain.ErrInvalidPassword {
 		t.Errorf("Expected ErrInvalidPassword, got %v", err)
 	}
@@ -57,7 +58,7 @@ func TestRegisterUser_InvalidEmail(t *testing.T) {
 		Password: "password123",
 	}
 
-	_, err := usecase.RegisterUser(input)
+	_, err := usecase.RegisterUser(context.Background(), input)
 	if err != domain.ErrInvalidEmail {
 		t.Errorf("Expected ErrInvalidEmail, got %v", err)
 	}

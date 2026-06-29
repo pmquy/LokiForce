@@ -1,8 +1,10 @@
 package domain
 
+import "context"
+
 type OrganizationRepository interface {
-	Create(org *Organization) error
-	GetByID(id string) (*Organization, error)
-	ListByOwner(ownerID string) ([]*Organization, error)
-	Delete(id string) error
+	Create(ctx context.Context, org *Organization) error
+	GetByID(ctx context.Context, id string) (*Organization, error)
+	ListByOwner(ctx context.Context, ownerID string) ([]*Organization, error)
+	Delete(ctx context.Context, id string) error
 }

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 
 	"gorm.io/gorm"
@@ -30,14 +31,14 @@ func Migrate(db *gorm.DB) error {
 	return db.AutoMigrate(&teamModel{})
 }
 
-func (r *PostgresTeamRepository) Create(team *domain.Team) error {
+func (r *PostgresTeamRepository) Create(ctx context.Context, team *domain.Team) error {
 	m := toModel(team)
-	return r.db.Create(m).Error
+	return r.db.WithContext(ctx).Create(m).Error
 }
 
-func (r *PostgresTeamRepository) GetByID(id string) (*domain.Team, error) {
+func (r *PostgresTeamRepository) GetByID(ctx context.Context, id string) (*domain.Team, error) {
 	var m teamModel
-	if err := r.db.First(&m, "id = ?", id).Error; err != nil {
+	if err := r.db.WithContext(ctx).First(&m, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("team not found")
 		}
@@ -46,9 +47,9 @@ func (r *PostgresTeamRepository) GetByID(id string) (*domain.Team, error) {
 	return toDomain(&m), nil
 }
 
-func (r *PostgresTeamRepository) ListByOrg(orgID string) ([]*domain.Team, error) {
+func (r *PostgresTeamRepository) ListByOrg(ctx context.Context, orgID string) ([]*domain.Team, error) {
 	var models []teamModel
-	if err := r.db.Find(&models, "org_id = ?", orgID).Error; err != nil {
+	if err := r.db.WithContext(ctx).Find(&models, "org_id = ?", orgID).Error; err != nil {
 		return nil, err
 	}
 
@@ -59,8 +60,8 @@ func (r *PostgresTeamRepository) ListByOrg(orgID string) ([]*domain.Team, error)
 	return teams, nil
 }
 
-func (r *PostgresTeamRepository) Delete(id string) error {
-	res := r.db.Delete(&teamModel{}, "id = ?", id)
+func (r *PostgresTeamRepository) Delete(ctx context.Context, id string) error {
+	res := r.db.WithContext(ctx).Delete(&teamModel{}, "id = ?", id)
 	if res.Error != nil {
 		return res.Error
 	}

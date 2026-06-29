@@ -1,6 +1,7 @@
 package http
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,6 +26,7 @@ type createTeamRequest struct {
 func (h *TeamHandler) Create(c *gin.Context) {
 	var req createTeamRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		slog.Warn("Create team request binding failed", "error", err)
 		response.Fail(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -35,19 +37,22 @@ func (h *TeamHandler) Create(c *gin.Context) {
 		OrgID:       req.OrgID,
 	}
 
-	out, err := h.usecase.CreateTeam(input)
+	out, err := h.usecase.CreateTeam(c.Request.Context(), input)
 	if err != nil {
+		slog.Error("CreateTeam usecase failed", "error", err)
 		response.Fail(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
+	slog.Info("Team created successfully", "teamID", out.TeamID, "orgID", req.OrgID)
 	response.Created(c, out)
 }
 
 func (h *TeamHandler) GetByID(c *gin.Context) {
 	id := c.Param("id")
-	out, err := h.usecase.GetTeamByID(id)
+	out, err := h.usecase.GetTeamByID(c.Request.Context(), id)
 	if err != nil {
+		slog.Warn("GetTeamByID failed", "teamID", id, "error", err)
 		response.Fail(c, http.StatusNotFound, err.Error())
 		return
 	}
@@ -62,8 +67,9 @@ func (h *TeamHandler) ListByOrg(c *gin.Context) {
 		return
 	}
 
-	out, err := h.usecase.ListOrgTeams(orgID)
+	out, err := h.usecase.ListOrgTeams(c.Request.Context(), orgID)
 	if err != nil {
+		slog.Error("ListOrgTeams failed", "orgID", orgID, "error", err)
 		response.Fail(c, http.StatusBadRequest, err.Error())
 		return
 	}

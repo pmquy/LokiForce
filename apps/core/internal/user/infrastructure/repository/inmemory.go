@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"context"
 	"sync"
+
 	"lokiforce.com/apps/core/internal/user/domain"
 )
 
@@ -16,7 +18,7 @@ func NewInMemoryUserRepository() *InMemoryUserRepository {
 	}
 }
 
-func (r *InMemoryUserRepository) CreateUser(user *domain.User) error {
+func (r *InMemoryUserRepository) CreateUser(ctx context.Context, user *domain.User) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -33,7 +35,7 @@ func (r *InMemoryUserRepository) CreateUser(user *domain.User) error {
 	return nil
 }
 
-func (r *InMemoryUserRepository) GetUserByID(id string) (*domain.User, error) {
+func (r *InMemoryUserRepository) GetUserByID(ctx context.Context, id string) (*domain.User, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -44,7 +46,7 @@ func (r *InMemoryUserRepository) GetUserByID(id string) (*domain.User, error) {
 	return user, nil
 }
 
-func (r *InMemoryUserRepository) GetUserByUsername(username string) (*domain.User, error) {
+func (r *InMemoryUserRepository) GetUserByUsername(ctx context.Context, username string) (*domain.User, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -56,7 +58,7 @@ func (r *InMemoryUserRepository) GetUserByUsername(username string) (*domain.Use
 	return nil, domain.ErrUserNotFound
 }
 
-func (r *InMemoryUserRepository) GetUserByEmail(email string) (*domain.User, error) {
+func (r *InMemoryUserRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -68,7 +70,7 @@ func (r *InMemoryUserRepository) GetUserByEmail(email string) (*domain.User, err
 	return nil, domain.ErrUserNotFound
 }
 
-func (r *InMemoryUserRepository) UpdateUser(user *domain.User) error {
+func (r *InMemoryUserRepository) UpdateUser(ctx context.Context, user *domain.User) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -79,7 +81,7 @@ func (r *InMemoryUserRepository) UpdateUser(user *domain.User) error {
 	return nil
 }
 
-func (r *InMemoryUserRepository) DeleteUser(id string) error {
+func (r *InMemoryUserRepository) DeleteUser(ctx context.Context, id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

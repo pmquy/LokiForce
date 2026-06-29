@@ -1,13 +1,14 @@
 package application
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 	"lokiforce.com/apps/core/internal/user/domain"
 )
 
 func NewUserUsecase(repo domain.UserRepository, tokenService TokenService) UserUsecase {
 	return &userUsecaseImpl{
-
 		repository:   repo,
 		tokenService: tokenService,
 	}
@@ -18,16 +19,14 @@ type userUsecaseImpl struct {
 	tokenService TokenService
 }
 
-func (u *userUsecaseImpl) RegisterUser(input RegisterUserInput) (RegisterUserOutput, error) {
+func (u *userUsecaseImpl) RegisterUser(ctx context.Context, input RegisterUserInput) (RegisterUserOutput, error) {
 	id := uuid.NewString()
 	user, err := domain.NewUser(id, input.Username, input.Email, input.Password)
-
 	if err != nil {
 		return RegisterUserOutput{}, err
 	}
 
-	err = u.repository.CreateUser(user)
-
+	err = u.repository.CreateUser(ctx, user)
 	if err != nil {
 		return RegisterUserOutput{}, err
 	}
@@ -37,8 +36,8 @@ func (u *userUsecaseImpl) RegisterUser(input RegisterUserInput) (RegisterUserOut
 	}, nil
 }
 
-func (u *userUsecaseImpl) LoginUser(input LoginUserInput) (LoginUserOutput, error) {
-	user, err := u.repository.GetUserByEmail(input.Email)
+func (u *userUsecaseImpl) LoginUser(ctx context.Context, input LoginUserInput) (LoginUserOutput, error) {
+	user, err := u.repository.GetUserByEmail(ctx, input.Email)
 	if err != nil {
 		return LoginUserOutput{}, domain.ErrInvalidCredentials
 	}
@@ -57,8 +56,8 @@ func (u *userUsecaseImpl) LoginUser(input LoginUserInput) (LoginUserOutput, erro
 	}, nil
 }
 
-func (u *userUsecaseImpl) GetUserByID(id string) (UserProfileOutput, error) {
-	user, err := u.repository.GetUserByID(id)
+func (u *userUsecaseImpl) GetUserByID(ctx context.Context, id string) (UserProfileOutput, error) {
+	user, err := u.repository.GetUserByID(ctx, id)
 	if err != nil {
 		return UserProfileOutput{}, err
 	}

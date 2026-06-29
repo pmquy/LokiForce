@@ -1,5 +1,7 @@
 package application
 
+import "context"
+
 type RegisterUserInput struct {
 	Username string
 	Email    string
@@ -27,7 +29,7 @@ type UserProfileOutput struct {
 }
 
 type UserUsecase interface {
-	RegisterUser(input RegisterUserInput) (RegisterUserOutput, error)
-	LoginUser(input LoginUserInput) (LoginUserOutput, error)
-	GetUserByID(id string) (UserProfileOutput, error)
+	RegisterUser(ctx context.Context, input RegisterUserInput) (RegisterUserOutput, error)
+	LoginUser(ctx context.Context, input LoginUserInput) (LoginUserOutput, error)
+	GetUserByID(ctx context.Context, id string) (UserProfileOutput, error)
 }

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 
 	"gorm.io/gorm"
@@ -31,17 +32,17 @@ func Migrate(db *gorm.DB) error {
 	return db.AutoMigrate(&userModel{})
 }
 
-func (r *PostgresUserRepository) CreateUser(user *domain.User) error {
+func (r *PostgresUserRepository) CreateUser(ctx context.Context, user *domain.User) error {
 	m := toModel(user)
-	if err := r.db.Create(m).Error; err != nil {
+	if err := r.db.WithContext(ctx).Create(m).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *PostgresUserRepository) GetUserByID(id string) (*domain.User, error) {
+func (r *PostgresUserRepository) GetUserByID(ctx context.Context, id string) (*domain.User, error) {
 	var m userModel
-	if err := r.db.First(&m, "id = ?", id).Error; err != nil {
+	if err := r.db.WithContext(ctx).First(&m, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, domain.ErrUserNotFound
 		}
@@ -50,9 +51,9 @@ func (r *PostgresUserRepository) GetUserByID(id string) (*domain.User, error) {
 	return toDomain(&m), nil
 }
 
-func (r *PostgresUserRepository) GetUserByUsername(username string) (*domain.User, error) {
+func (r *PostgresUserRepository) GetUserByUsername(ctx context.Context, username string) (*domain.User, error) {
 	var m userModel
-	if err := r.db.First(&m, "username = ?", username).Error; err != nil {
+	if err := r.db.WithContext(ctx).First(&m, "username = ?", username).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, domain.ErrUserNotFound
 		}
@@ -61,9 +62,9 @@ func (r *PostgresUserRepository) GetUserByUsername(username string) (*domain.Use
 	return toDomain(&m), nil
 }
 
-func (r *PostgresUserRepository) GetUserByEmail(email string) (*domain.User, error) {
+func (r *PostgresUserRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	var m userModel
-	if err := r.db.First(&m, "email = ?", email).Error; err != nil {
+	if err := r.db.WithContext(ctx).First(&m, "email = ?", email).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, domain.ErrUserNotFound
 		}
@@ -72,9 +73,9 @@ func (r *PostgresUserRepository) GetUserByEmail(email string) (*domain.User, err
 	return toDomain(&m), nil
 }
 
-func (r *PostgresUserRepository) UpdateUser(user *domain.User) error {
+func (r *PostgresUserRepository) UpdateUser(ctx context.Context, user *domain.User) error {
 	m := toModel(user)
-	res := r.db.Save(m)
+	res := r.db.WithContext(ctx).Save(m)
 	if res.Error != nil {
 		return res.Error
 	}
@@ -84,8 +85,8 @@ func (r *PostgresUserRepository) UpdateUser(user *domain.User) error {
 	return nil
 }
 
-func (r *PostgresUserRepository) DeleteUser(id string) error {
-	res := r.db.Delete(&userModel{}, "id = ?", id)
+func (r *PostgresUserRepository) DeleteUser(ctx context.Context, id string) error {
+	res := r.db.WithContext(ctx).Delete(&userModel{}, "id = ?", id)
 	if res.Error != nil {
 		return res.Error
 	}

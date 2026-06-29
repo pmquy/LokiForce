@@ -1,20 +1,23 @@
 package domain
 
+import "context"
+
 type UserRepository interface {
 	// CreateUser creates a new user in the repository.
-	CreateUser(user *User) error
+	CreateUser(ctx context.Context, user *User) error
 
 	// GetUserByID retrieves a user by their ID.
-	GetUserByID(id string) (*User, error)
+	GetUserByID(ctx context.Context, id string) (*User, error)
 
 	// GetUserByUsername retrieves a user by their username.
-	GetUserByUsername(username string) (*User, error)
+	GetUserByUsername(ctx context.Context, username string) (*User, error)
 
-	GetUserByEmail(email string) (*User, error)
+	GetUserByEmail(ctx context.Context, email string) (*User, error)
 
 	// UpdateUser updates an existing user's information.
-	UpdateUser(user *User) error
+	UpdateUser(ctx context.Context, user *User) error
 
 	// DeleteUser removes a user from the repository by their ID.
-	DeleteUser(id string) error
+	DeleteUser(ctx context.Context, id string) error
 }
+
