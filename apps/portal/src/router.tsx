@@ -30,7 +30,7 @@ const registerRoute = createRoute({
 
 const protectedRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/",
+  id: 'protected',
   component: DashboardLayout,
 });
 

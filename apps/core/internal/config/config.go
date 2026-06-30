@@ -15,7 +15,8 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port int `mapstructure:"port"`
+	Port           int      `mapstructure:"port"`
+	AllowedOrigins []string `mapstructure:"allowed_origins"`
 }
 
 type DatabaseConfig struct {
@@ -59,6 +60,7 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("github.token", "")
 	viper.SetDefault("github.owner", "lokiforce-dev")
 	viper.SetDefault("github.prefix", "lkf-")
+	viper.SetDefault("server.allowed_origins", []string{"http://localhost:5173"})
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Printf("Warning: failed to read config file: %v. Using defaults.", err)

@@ -8,7 +8,7 @@ export interface Organization {
 }
 
 export async function fetchMyOrganizations(): Promise<Organization[]> {
-  return apiRequest<Organization[]>("/organizations/my");
+  return apiRequest<Organization[]>('/organizations');
 }
 
 export async function createOrganization(

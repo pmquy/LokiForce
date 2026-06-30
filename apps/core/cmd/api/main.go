@@ -58,6 +58,7 @@ func main() {
 	}
 
 	r := gin.Default()
+	r.Use(middleware.CORSMiddleware(cfg.Server.AllowedOrigins))
 
 	apiV1 := r.Group("/api/v1")
 	tokenService := ProvideTokenService(cfg)
