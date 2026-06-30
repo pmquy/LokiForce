@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
-	"path/filepath"
 
 	"github.com/google/uuid"
 	"lokiforce.com/apps/core/internal/service/domain"
@@ -61,18 +59,6 @@ func (u *serviceUsecaseImpl) CreateService(ctx context.Context, input CreateServ
 		return CreateServiceOutput{}, err
 	}
 
-	tempDir := filepath.Join("./scratch", "temp_"+svc.ID)
-	outputPath := filepath.Join(tempDir, svc.Name)
-	if err := os.MkdirAll(outputPath, 0755); err != nil {
-		return CreateServiceOutput{}, fmt.Errorf("failed to create temporary folder: %w", err)
-	}
-
-	defer os.RemoveAll(tempDir)
-
-	if err := copyDir(matchTemplate.Path, outputPath); err != nil {
-		return CreateServiceOutput{}, fmt.Errorf("failed to copy template files: %w", err)
-	}
-
 	uniqueRepoName := fmt.Sprintf("%s-%s", svc.Name, svc.ID[:8])
 	slog.Info("Creating Git repository", "name", uniqueRepoName)
 	repoConfig := RepositoryConfig{
@@ -85,8 +71,8 @@ func (u *serviceUsecaseImpl) CreateService(ctx context.Context, input CreateServ
 		return CreateServiceOutput{}, fmt.Errorf("failed to create Git repository: %w", err)
 	}
 
-	slog.Info("Pushing files to Git repository", "url", repoURL)
-	if err := u.versionControl.PushFiles(ctx, repoURL, outputPath); err != nil {
+	slog.Info("Scaffolding and pushing files to Git repository in-memory", "url", repoURL)
+	if err := u.versionControl.PushFiles(ctx, repoURL, matchTemplate.Path, svc.Name); err != nil {
 		return CreateServiceOutput{}, fmt.Errorf("failed to push template code: %w", err)
 	}
 
@@ -155,34 +141,4 @@ func (u *serviceUsecaseImpl) DeleteService(ctx context.Context, id string) error
 
 func (u *serviceUsecaseImpl) ListTemplates(ctx context.Context) ([]Template, error) {
 	return AvailableTemplates, nil
-}
-
-func copyDir(src string, dst string) error {
-	entries, err := os.ReadDir(src)
-	if err != nil {
-		return err
-	}
-
-	for _, entry := range entries {
-		srcPath := filepath.Join(src, entry.Name())
-		dstPath := filepath.Join(dst, entry.Name())
-
-		if entry.IsDir() {
-			if err := os.MkdirAll(dstPath, 0755); err != nil {
-				return err
-			}
-			if err := copyDir(srcPath, dstPath); err != nil {
-				return err
-			}
-		} else {
-			data, err := os.ReadFile(srcPath)
-			if err != nil {
-				return err
-			}
-			if err := os.WriteFile(dstPath, data, 0644); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
 }
