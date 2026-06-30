@@ -39,7 +39,7 @@ func NewServiceUsecase(repo domain.ServiceRepository, vc VersionControl) Service
 }
 
 func (u *serviceUsecaseImpl) CreateService(ctx context.Context, input CreateServiceInput) (CreateServiceOutput, error) {
-	// Validate template ID
+
 	var matchTemplate *Template
 	for _, t := range AvailableTemplates {
 		if t.ID == input.TemplateID {
@@ -57,26 +57,22 @@ func (u *serviceUsecaseImpl) CreateService(ctx context.Context, input CreateServ
 		return CreateServiceOutput{}, err
 	}
 
-	// 1. Save metadata to DB
 	if err := u.repository.Create(ctx, svc); err != nil {
 		return CreateServiceOutput{}, err
 	}
 
-	// 2. Generate scaffold files locally in a temporary directory
 	tempDir := filepath.Join("./scratch", "temp_"+svc.ID)
 	outputPath := filepath.Join(tempDir, svc.Name)
 	if err := os.MkdirAll(outputPath, 0755); err != nil {
 		return CreateServiceOutput{}, fmt.Errorf("failed to create temporary folder: %w", err)
 	}
 
-	// Clean up local temp folder after operations
 	defer os.RemoveAll(tempDir)
 
 	if err := copyDir(matchTemplate.Path, outputPath); err != nil {
 		return CreateServiceOutput{}, fmt.Errorf("failed to copy template files: %w", err)
 	}
 
-		// 3. Create remote repository on Git provider
 	uniqueRepoName := fmt.Sprintf("%s-%s", svc.Name, svc.ID[:8])
 	slog.Info("Creating Git repository", "name", uniqueRepoName)
 	repoConfig := RepositoryConfig{
@@ -89,13 +85,11 @@ func (u *serviceUsecaseImpl) CreateService(ctx context.Context, input CreateServ
 		return CreateServiceOutput{}, fmt.Errorf("failed to create Git repository: %w", err)
 	}
 
-	// 4. Push generated files to the remote repository
 	slog.Info("Pushing files to Git repository", "url", repoURL)
 	if err := u.versionControl.PushFiles(ctx, repoURL, outputPath); err != nil {
 		return CreateServiceOutput{}, fmt.Errorf("failed to push template code: %w", err)
 	}
 
-	// 5. Update service database record with the repository URL
 	svc.Repository = repoURL
 	if err := u.repository.Update(ctx, svc); err != nil {
 		return CreateServiceOutput{}, fmt.Errorf("failed to update service repo url: %w", err)
@@ -163,7 +157,6 @@ func (u *serviceUsecaseImpl) ListTemplates(ctx context.Context) ([]Template, err
 	return AvailableTemplates, nil
 }
 
-// copyDir recursively copies a directory tree.
 func copyDir(src string, dst string) error {
 	entries, err := os.ReadDir(src)
 	if err != nil {

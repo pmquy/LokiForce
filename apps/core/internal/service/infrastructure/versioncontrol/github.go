@@ -42,7 +42,6 @@ type createRepoResponse struct {
 func (g *GitHubVersionControl) CreateRepository(ctx context.Context, config application.RepositoryConfig) (string, error) {
 	repoName := g.prefix + config.Name
 
-	// If token is empty, act as mock / dry-run to avoid failing without setup!
 	if g.token == "" || g.token == "mock_token" {
 		mockURL := fmt.Sprintf("https://github.com/%s/%s.git", g.owner, repoName)
 		return mockURL, nil
@@ -90,12 +89,11 @@ func (g *GitHubVersionControl) CreateRepository(ctx context.Context, config appl
 }
 
 func (g *GitHubVersionControl) PushFiles(ctx context.Context, repoURL string, localDir string) error {
-	// If token is empty, act as mock / dry-run
+
 	if g.token == "" || g.token == "mock_token" {
 		return nil
 	}
 
-	// Inject token into repoURL: https://github.com/owner/name.git -> https://<token>@github.com/owner/name.git
 	authURL := repoURL
 	if strings.HasPrefix(repoURL, "https://") {
 		authURL = "https://" + g.token + "@" + strings.TrimPrefix(repoURL, "https://")

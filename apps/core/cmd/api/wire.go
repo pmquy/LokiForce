@@ -1,5 +1,4 @@
 //go:build wireinject
-// +build wireinject
 
 package main
 
@@ -9,32 +8,27 @@ import (
 	"gorm.io/gorm"
 	"lokiforce.com/apps/core/internal/config"
 
-	// Organization
 	orgApp "lokiforce.com/apps/core/internal/organization/application"
 	orgHttp "lokiforce.com/apps/core/internal/organization/delivery/http"
 	orgDomain "lokiforce.com/apps/core/internal/organization/domain"
 	orgRepo "lokiforce.com/apps/core/internal/organization/infrastructure/repository"
 
-	// Project
 	projectApp "lokiforce.com/apps/core/internal/project/application"
 	projectHttp "lokiforce.com/apps/core/internal/project/delivery/http"
 	projectDomain "lokiforce.com/apps/core/internal/project/domain"
 	projectRepo "lokiforce.com/apps/core/internal/project/infrastructure/repository"
 
-	// Service
 	serviceApp "lokiforce.com/apps/core/internal/service/application"
 	serviceHttp "lokiforce.com/apps/core/internal/service/delivery/http"
 	serviceDomain "lokiforce.com/apps/core/internal/service/domain"
 	serviceRepo "lokiforce.com/apps/core/internal/service/infrastructure/repository"
 	serviceVc "lokiforce.com/apps/core/internal/service/infrastructure/versioncontrol"
 
-	// Team
 	teamApp "lokiforce.com/apps/core/internal/team/application"
 	teamHttp "lokiforce.com/apps/core/internal/team/delivery/http"
 	teamDomain "lokiforce.com/apps/core/internal/team/domain"
 	teamRepo "lokiforce.com/apps/core/internal/team/infrastructure/repository"
 
-	// User
 	"lokiforce.com/apps/core/internal/user/application"
 	userHttp "lokiforce.com/apps/core/internal/user/delivery/http"
 	"lokiforce.com/apps/core/internal/user/domain"
@@ -74,31 +68,26 @@ func InitializeApp(cfg *config.Config) (*Handlers, error) {
 		ProvideDB,
 		ProvideTokenService,
 
-		// User
 		repository.NewPostgresUserRepository,
 		wire.Bind(new(domain.UserRepository), new(*repository.PostgresUserRepository)),
 		application.NewUserUsecase,
 		userHttp.NewUserHandler,
 
-		// Organization
 		orgRepo.NewPostgresOrgRepository,
 		wire.Bind(new(orgDomain.OrganizationRepository), new(*orgRepo.PostgresOrgRepository)),
 		orgApp.NewOrgUsecase,
 		orgHttp.NewOrgHandler,
 
-		// Project
 		projectRepo.NewPostgresProjectRepository,
 		wire.Bind(new(projectDomain.ProjectRepository), new(*projectRepo.PostgresProjectRepository)),
 		projectApp.NewProjectUsecase,
 		projectHttp.NewProjectHandler,
 
-		// Team
 		teamRepo.NewPostgresTeamRepository,
 		wire.Bind(new(teamDomain.TeamRepository), new(*teamRepo.PostgresTeamRepository)),
 		teamApp.NewTeamUsecase,
 		teamHttp.NewTeamHandler,
 
-		// Service
 		serviceRepo.NewPostgresServiceRepository,
 		wire.Bind(new(serviceDomain.ServiceRepository), new(*serviceRepo.PostgresServiceRepository)),
 		serviceVc.NewGitHubVersionControl,

@@ -46,40 +46,35 @@ func NewHandlers(
 }
 
 func main() {
-	// Load config
+
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// Initialize app using wire injection
 	handlers, err := InitializeApp(cfg)
 	if err != nil {
 		log.Fatalf("Failed to initialize app: %v", err)
 	}
 
-	// Set up router
 	r := gin.Default()
 
 	apiV1 := r.Group("/api/v1")
 	tokenService := ProvideTokenService(cfg)
 	authMiddleware := middleware.AuthMiddleware(tokenService)
 
-	// Register routes
 	userHttp.RegisterUserRoutes(apiV1, handlers.UserHandler, authMiddleware, tokenService)
 	orgHttp.RegisterOrgRoutes(apiV1, handlers.OrgHandler, authMiddleware)
 	projectHttp.RegisterProjectRoutes(apiV1, handlers.ProjHandler, authMiddleware)
 	teamHttp.RegisterTeamRoutes(apiV1, handlers.TeamHandler, authMiddleware)
 	serviceHttp.RegisterServiceRoutes(apiV1, handlers.SvcHandler, authMiddleware)
 
-	// Configure HTTP server
 	portStr := fmt.Sprintf("%d", cfg.Server.Port)
 	srv := &http.Server{
 		Addr:    ":" + portStr,
 		Handler: r,
 	}
 
-	// Run server in a goroutine
 	go func() {
 		slog.Info("Starting server", "port", portStr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -87,13 +82,11 @@ func main() {
 		}
 	}()
 
-	// Wait for interrupt signal to gracefully shutdown the server
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	slog.Info("Shutting down server...")
 
-	// 5-second timeout context for graceful shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 

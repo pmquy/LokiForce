@@ -43,6 +43,5 @@ type ServiceUsecase interface {
 	UpdateService(ctx context.Context, input UpdateServiceInput) error
 	DeleteService(ctx context.Context, id string) error
 
-	// Template helpers
 	ListTemplates(ctx context.Context) ([]Template, error)
 }
