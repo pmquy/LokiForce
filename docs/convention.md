@@ -178,4 +178,34 @@ Sử dụng `response.Fail(c, statusCode, errorMsg)`. Định dạng JSON đầu
   * `src/components/`: Các component dùng chung cho toàn dự án (Sidebar Layout, Button, Input, Modal...).
   * `src/services/api.ts`: API Client dùng chung viết bằng Fetch/Axios hỗ trợ tự động đính kèm JWT Authorization header.
 
+## 11. Hướng Dẫn Khởi Chạy Phát Triển (Development Commands)
+
+Để đơn giản hóa việc chạy các câu lệnh phát triển từ thư mục gốc dự án (Monorepo Root), chúng ta cấu hình sẵn các lệnh trong [Makefile](file:///home/pmquy/Code/LokiForce/Makefile):
+
+* **Cài đặt toàn bộ dependencies (Go & npm):**
+  ```bash
+  make install
+  ```
+* **Khởi chạy Backend với Hot-Reload (Air):**
+  ```bash
+  make run-backend
+  ```
+* **Khởi chạy Frontend Portal (Vite):**
+  ```bash
+  make run-frontend
+  ```
+* **Chạy bộ kiểm thử Go:**
+  ```bash
+  make test
+  ```
+* **Sinh mã tiêm phụ thuộc DI (Wire):**
+  ```bash
+  make wire
+  ```
+* **Build biên dịch sản phẩm cả Backend & Frontend:**
+  ```bash
+  make build
+  ```
+
+
 
