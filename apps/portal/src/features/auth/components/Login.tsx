@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import { useNavigate, Link } from '@tanstack/react-router';
-import { useLoginMutation } from '../hooks/useAuth';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Shield, Key, Mail, Loader2, AlertCircle } from 'lucide-react';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
+import { useState } from "react";
+import { useNavigate, Link } from "@tanstack/react-router";
+import { useLoginMutation } from "../hooks/useAuth";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Shield, Key, Mail, Loader2, AlertCircle } from "lucide-react";
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
 import {
   Form,
   FormControl,
@@ -14,39 +14,43 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '../../../components/ui/form';
+} from "../../../components/ui/form";
 
 const loginSchema = z.object({
-  email: z.string().email({ message: 'Vui lòng nhập địa chỉ email hợp lệ' }),
-  password: z.string().min(8, { message: 'Mật khẩu phải chứa ít nhất 8 ký tự' }),
+  email: z.string().email({ message: "Vui lòng nhập địa chỉ email hợp lệ" }),
+  password: z
+    .string()
+    .min(8, { message: "Mật khẩu phải chứa ít nhất 8 ký tự" }),
 });
 
 type LoginValues = z.infer<typeof loginSchema>;
 
 export function Login() {
   const navigate = useNavigate();
-  const [errorMsg, setErrorMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState("");
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
     },
   });
 
   const loginMutation = useLoginMutation(
     (data) => {
-      localStorage.setItem('lokiforce_token', data.token);
-      navigate({ to: '/' });
+      localStorage.setItem("lokiforce_token", data.token);
+      navigate({ to: "/" });
     },
     (err: any) => {
-      setErrorMsg(err.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
-    }
+      setErrorMsg(
+        err.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.",
+      );
+    },
   );
 
   const onSubmit = (values: LoginValues) => {
-    setErrorMsg('');
+    setErrorMsg("");
     loginMutation.mutate({ email: values.email, password: values.password });
   };
 
@@ -69,7 +73,7 @@ export function Login() {
           Welcome back
         </h2>
         <p className="mt-2 text-center text-sm text-slate-400">
-          Or{' '}
+          Or{" "}
           <Link
             to="/register"
             className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
@@ -146,7 +150,7 @@ export function Login() {
                 {loginMutation.isPending ? (
                   <Loader2 className="animate-spin h-5 w-5 text-white" />
                 ) : (
-                  'Sign in'
+                  "Sign in"
                 )}
               </Button>
             </form>

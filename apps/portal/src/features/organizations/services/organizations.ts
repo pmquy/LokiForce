@@ -1,4 +1,4 @@
-import { apiRequest } from '../../../services/api';
+import { apiRequest } from "../../../services/api";
 
 export interface Organization {
   ID: string;
@@ -8,12 +8,15 @@ export interface Organization {
 }
 
 export async function fetchMyOrganizations(): Promise<Organization[]> {
-  return apiRequest<Organization[]>('/organizations/my');
+  return apiRequest<Organization[]>("/organizations/my");
 }
 
-export async function createOrganization(name: string, description: string): Promise<any> {
-  return apiRequest<any>('/organizations', {
-    method: 'POST',
+export async function createOrganization(
+  name: string,
+  description: string,
+): Promise<any> {
+  return apiRequest<any>("/organizations", {
+    method: "POST",
     body: JSON.stringify({ name, description }),
   });
 }

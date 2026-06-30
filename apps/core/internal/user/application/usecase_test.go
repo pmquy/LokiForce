@@ -8,12 +8,16 @@ import (
 	"lokiforce.com/apps/core/internal/user/domain"
 	"lokiforce.com/apps/core/internal/user/domain/mocks"
 	"lokiforce.com/apps/core/internal/user/infrastructure/jwt"
+	"lokiforce.com/apps/core/pkg/mail"
+	"lokiforce.com/apps/core/pkg/mq"
 )
 
 func TestRegisterUser_ValidInput(t *testing.T) {
 	repo := mocks.NewMockUserRepository()
 	tokenService := jwt.NewJWTService("test_secret")
-	usecase := application.NewUserUsecase(repo, tokenService)
+	mailService := mail.NewMockMailService()
+	msgQueue := mq.NewInMemoryMQ()
+	usecase := application.NewUserUsecase(repo, tokenService, mailService, msgQueue)
 
 	input := application.RegisterUserInput{
 		Username: "vinh",
@@ -34,7 +38,9 @@ func TestRegisterUser_ValidInput(t *testing.T) {
 func TestRegisterUser_InvalidPassword(t *testing.T) {
 	repo := mocks.NewMockUserRepository()
 	tokenService := jwt.NewJWTService("test_secret")
-	usecase := application.NewUserUsecase(repo, tokenService)
+	mailService := mail.NewMockMailService()
+	msgQueue := mq.NewInMemoryMQ()
+	usecase := application.NewUserUsecase(repo, tokenService, mailService, msgQueue)
 
 	input := application.RegisterUserInput{
 		Username: "vinh",
@@ -50,7 +56,9 @@ func TestRegisterUser_InvalidPassword(t *testing.T) {
 func TestRegisterUser_InvalidEmail(t *testing.T) {
 	repo := mocks.NewMockUserRepository()
 	tokenService := jwt.NewJWTService("test_secret")
-	usecase := application.NewUserUsecase(repo, tokenService)
+	mailService := mail.NewMockMailService()
+	msgQueue := mq.NewInMemoryMQ()
+	usecase := application.NewUserUsecase(repo, tokenService, mailService, msgQueue)
 
 	input := application.RegisterUserInput{
 		Username: "vinh",

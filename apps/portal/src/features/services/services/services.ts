@@ -1,4 +1,4 @@
-import { apiRequest } from '../../../services/api';
+import { apiRequest } from "../../../services/api";
 
 export interface Service {
   ID: string;
@@ -20,22 +20,24 @@ export interface CreateServiceOutput {
   RepositoryURL: string;
 }
 
-export async function fetchServicesByProject(projectId: string): Promise<Service[]> {
+export async function fetchServicesByProject(
+  projectId: string,
+): Promise<Service[]> {
   return apiRequest<Service[]>(`/services?project_id=${projectId}`);
 }
 
 export async function fetchTemplates(): Promise<Template[]> {
-  return apiRequest<Template[]>('/services/templates');
+  return apiRequest<Template[]>("/services/templates");
 }
 
 export async function createService(
   name: string,
   description: string,
   projectId: string,
-  templateId: string
+  templateId: string,
 ): Promise<CreateServiceOutput> {
-  return apiRequest<CreateServiceOutput>('/services', {
-    method: 'POST',
+  return apiRequest<CreateServiceOutput>("/services", {
+    method: "POST",
     body: JSON.stringify({
       name,
       description,

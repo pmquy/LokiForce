@@ -2,17 +2,45 @@ package application
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/google/uuid"
 	"lokiforce.com/apps/core/internal/organization/domain"
+	"lokiforce.com/apps/core/pkg/mq"
 )
 
 type orgUsecaseImpl struct {
 	repository domain.OrganizationRepository
+	mq         mq.MessageQueue
 }
 
-func NewOrgUsecase(repo domain.OrganizationRepository) OrgUsecase {
-	return &orgUsecaseImpl{repository: repo}
+func NewOrgUsecase(repo domain.OrganizationRepository, msgQueue mq.MessageQueue) OrgUsecase {
+	u := &orgUsecaseImpl{
+		repository: repo,
+		mq:         msgQueue,
+	}
+
+	msgQueue.Subscribe("user.registered", func(payload any) {
+		event, ok := payload.(mq.UserRegisteredEvent)
+		if !ok {
+			slog.Error("Invalid payload type for user.registered event")
+			return
+		}
+
+		slog.Info("Event user.registered received asynchronously. Creating default organization...", "userID", event.UserID, "username", event.Username)
+
+		ctx := context.Background()
+		_, err := u.CreateOrg(ctx, CreateOrgInput{
+			Name:        event.Username + "'s Org",
+			Description: "Default organization created automatically upon registration",
+			OwnerID:     event.UserID,
+		})
+		if err != nil {
+			slog.Error("Failed to automatically create default organization", "error", err, "userID", event.UserID)
+		}
+	})
+
+	return u
 }
 
 func (u *orgUsecaseImpl) CreateOrg(ctx context.Context, input CreateOrgInput) (CreateOrgOutput, error) {

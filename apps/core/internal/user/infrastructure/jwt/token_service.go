@@ -27,7 +27,7 @@ func (j *jwtService) GenerateToken(userID string, role string) (string, error) {
 }
 
 func (j *jwtService) ValidateToken(token string) (string, error) {
-	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, jwt.ErrSignatureInvalid
 		}

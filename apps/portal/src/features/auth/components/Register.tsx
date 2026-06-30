@@ -1,12 +1,19 @@
-import { useState } from 'react';
-import { useNavigate, Link } from '@tanstack/react-router';
-import { useRegisterMutation } from '../hooks/useAuth';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Shield, Key, Mail, User as UserIcon, Loader2, AlertCircle } from 'lucide-react';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
+import { useState } from "react";
+import { useNavigate, Link } from "@tanstack/react-router";
+import { useRegisterMutation } from "../hooks/useAuth";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  Shield,
+  Key,
+  Mail,
+  User as UserIcon,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
 import {
   Form,
   FormControl,
@@ -14,45 +21,51 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '../../../components/ui/form';
+} from "../../../components/ui/form";
 
 const registerSchema = z.object({
-  username: z.string().min(3, { message: 'Tên người dùng phải chứa ít nhất 3 ký tự' }),
-  email: z.string().email({ message: 'Vui lòng nhập địa chỉ email hợp lệ' }),
-  password: z.string().min(8, { message: 'Mật khẩu phải chứa ít nhất 8 ký tự' }),
+  username: z
+    .string()
+    .min(3, { message: "Tên người dùng phải chứa ít nhất 3 ký tự" }),
+  email: z.string().email({ message: "Vui lòng nhập địa chỉ email hợp lệ" }),
+  password: z
+    .string()
+    .min(8, { message: "Mật khẩu phải chứa ít nhất 8 ký tự" }),
 });
 
 type RegisterValues = z.infer<typeof registerSchema>;
 
 export function Register() {
   const navigate = useNavigate();
-  const [errorMsg, setErrorMsg] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      username: '',
-      email: '',
-      password: '',
+      username: "",
+      email: "",
+      password: "",
     },
   });
 
   const registerMutation = useRegisterMutation(
     () => {
-      setSuccessMsg('Đăng ký tài khoản thành công! Đang chuyển hướng sang đăng nhập...');
+      setSuccessMsg(
+        "Đăng ký tài khoản thành công! Đang chuyển hướng sang đăng nhập...",
+      );
       setTimeout(() => {
-        navigate({ to: '/login' });
+        navigate({ to: "/login" });
       }, 1500);
     },
     (err: any) => {
-      setErrorMsg(err.message || 'Đăng ký thất bại. Vui lòng thử lại.');
-    }
+      setErrorMsg(err.message || "Đăng ký thất bại. Vui lòng thử lại.");
+    },
   );
 
   const onSubmit = (values: RegisterValues) => {
-    setErrorMsg('');
-    setSuccessMsg('');
+    setErrorMsg("");
+    setSuccessMsg("");
     registerMutation.mutate({
       username: values.username,
       email: values.email,
@@ -79,7 +92,7 @@ export function Register() {
           Create your account
         </h2>
         <p className="mt-2 text-center text-sm text-slate-400">
-          Already have an account?{' '}
+          Already have an account?{" "}
           <Link
             to="/login"
             className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
@@ -185,7 +198,7 @@ export function Register() {
                 {registerMutation.isPending ? (
                   <Loader2 className="animate-spin h-5 w-5 text-white" />
                 ) : (
-                  'Create account'
+                  "Create account"
                 )}
               </Button>
             </form>

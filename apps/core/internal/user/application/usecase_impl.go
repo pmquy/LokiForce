@@ -2,21 +2,34 @@ package application
 
 import (
 	"context"
+	"fmt"
+	"log/slog"
 
 	"github.com/google/uuid"
 	"lokiforce.com/apps/core/internal/user/domain"
+	"lokiforce.com/apps/core/pkg/mail"
+	"lokiforce.com/apps/core/pkg/mq"
 )
 
-func NewUserUsecase(repo domain.UserRepository, tokenService TokenService) UserUsecase {
+func NewUserUsecase(
+	repo domain.UserRepository,
+	tokenService TokenService,
+	mailService mail.MailService,
+	msgQueue mq.MessageQueue,
+) UserUsecase {
 	return &userUsecaseImpl{
 		repository:   repo,
 		tokenService: tokenService,
+		mailService:  mailService,
+		mq:           msgQueue,
 	}
 }
 
 type userUsecaseImpl struct {
 	repository   domain.UserRepository
 	tokenService TokenService
+	mailService  mail.MailService
+	mq           mq.MessageQueue
 }
 
 func (u *userUsecaseImpl) RegisterUser(ctx context.Context, input RegisterUserInput) (RegisterUserOutput, error) {
@@ -30,6 +43,27 @@ func (u *userUsecaseImpl) RegisterUser(ctx context.Context, input RegisterUserIn
 	if err != nil {
 		return RegisterUserOutput{}, err
 	}
+
+	emailSubject := "Welcome to LokiForce!"
+	emailBody := fmt.Sprintf("Hi %s,\n\nThank you for registering at LokiForce portal!", user.Username)
+	go func() {
+		mailCtx := context.Background()
+		if err := u.mailService.SendEmail(mailCtx, string(user.Email), emailSubject, emailBody); err != nil {
+			slog.Error("Failed to send welcome email", "error", err, "email", string(user.Email))
+		}
+	}()
+
+	eventPayload := mq.UserRegisteredEvent{
+		UserID:   user.ID,
+		Username: user.Username,
+		Email:    string(user.Email),
+	}
+	go func() {
+		mqCtx := context.Background()
+		if err := u.mq.Publish(mqCtx, "user.registered", eventPayload); err != nil {
+			slog.Error("Failed to publish user.registered event", "error", err, "userID", user.ID)
+		}
+	}()
 
 	return RegisterUserOutput{
 		UserID: user.ID,

@@ -24,6 +24,8 @@ import (
 	"lokiforce.com/apps/core/internal/user/delivery/http"
 	"lokiforce.com/apps/core/internal/user/infrastructure/jwt"
 	"lokiforce.com/apps/core/internal/user/infrastructure/repository"
+	"lokiforce.com/apps/core/pkg/mail"
+	"lokiforce.com/apps/core/pkg/mq"
 )
 
 func InitializeApp(cfg *config.Config) (*Handlers, error) {
@@ -33,10 +35,12 @@ func InitializeApp(cfg *config.Config) (*Handlers, error) {
 	}
 	postgresUserRepository := repository.NewPostgresUserRepository(db)
 	tokenService := ProvideTokenService(cfg)
-	userUsecase := application.NewUserUsecase(postgresUserRepository, tokenService)
+	mailService := mail.NewMockMailService()
+	messageQueue := mq.NewInMemoryMQ()
+	userUsecase := application.NewUserUsecase(postgresUserRepository, tokenService, mailService, messageQueue)
 	userHandler := http.NewUserHandler(userUsecase)
 	postgresOrgRepository := repository2.NewPostgresOrgRepository(db)
-	orgUsecase := application2.NewOrgUsecase(postgresOrgRepository)
+	orgUsecase := application2.NewOrgUsecase(postgresOrgRepository, messageQueue)
 	orgHandler := http2.NewOrgHandler(orgUsecase)
 	postgresProjectRepository := repository3.NewPostgresProjectRepository(db)
 	projectUsecase := application3.NewProjectUsecase(postgresProjectRepository)

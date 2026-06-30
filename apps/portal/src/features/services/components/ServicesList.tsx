@@ -1,24 +1,38 @@
-import React, { useState, useEffect } from 'react';
-import { useOrganizationsQuery } from '../../organizations/hooks/useOrganizations';
-import { useProjectsQuery } from '../../projects/hooks/useProjects';
-import { useServicesQuery, useTemplatesQuery, useCreateServiceMutation } from '../hooks/useServices';
-import { Cpu, Plus, Loader2, X, AlertCircle, ChevronDown, GitBranch, Copy, Check, Terminal, ExternalLink } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useOrganizationsQuery } from "../../organizations/hooks/useOrganizations";
+import { useProjectsQuery } from "../../projects/hooks/useProjects";
+import {
+  useServicesQuery,
+  useTemplatesQuery,
+  useCreateServiceMutation,
+} from "../hooks/useServices";
+import {
+  Cpu,
+  Plus,
+  Loader2,
+  X,
+  AlertCircle,
+  ChevronDown,
+  GitBranch,
+  Copy,
+  Check,
+  Terminal,
+  ExternalLink,
+} from "lucide-react";
 
 export function ServicesList() {
-  const [selectedOrgId, setSelectedOrgId] = useState<string>('');
-  const [selectedProjId, setSelectedProjId] = useState<string>('');
+  const [selectedOrgId, setSelectedOrgId] = useState<string>("");
+  const [selectedProjId, setSelectedProjId] = useState<string>("");
   const [modalOpen, setModalOpen] = useState(false);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
 
-  // Form State
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [templateId, setTemplateId] = useState('golang');
-  const [errorMsg, setErrorMsg] = useState('');
-  const [generatedRepoUrl, setGeneratedRepoUrl] = useState('');
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [templateId, setTemplateId] = useState("golang");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [generatedRepoUrl, setGeneratedRepoUrl] = useState("");
   const [copied, setCopied] = useState(false);
 
-  // 1. Fetch Organizations
   const { data: orgs, isLoading: orgsLoading } = useOrganizationsQuery();
 
   useEffect(() => {
@@ -27,41 +41,39 @@ export function ServicesList() {
     }
   }, [orgs, selectedOrgId]);
 
-  // 2. Fetch Projects under Selected Org
-  const { data: projects, isLoading: projectsLoading } = useProjectsQuery(selectedOrgId);
+  const { data: projects, isLoading: projectsLoading } =
+    useProjectsQuery(selectedOrgId);
 
   useEffect(() => {
     if (projects && projects.length > 0) {
       setSelectedProjId(projects[0].ID);
     } else {
-      setSelectedProjId('');
+      setSelectedProjId("");
     }
   }, [projects, selectedOrgId]);
 
-  // 3. Fetch Services under Selected Project
-  const { data: services, isLoading: servicesLoading } = useServicesQuery(selectedProjId);
+  const { data: services, isLoading: servicesLoading } =
+    useServicesQuery(selectedProjId);
 
-  // 4. Fetch Templates list
   const { data: templates } = useTemplatesQuery();
 
-  // Create Service & Scaffold Mutation
   const createServiceMutation = useCreateServiceMutation(
     selectedProjId,
     (data) => {
       setGeneratedRepoUrl(data.RepositoryURL);
       setModalOpen(false);
       setSuccessModalOpen(true);
-      setName('');
-      setDescription('');
+      setName("");
+      setDescription("");
     },
     (err: any) => {
-      setErrorMsg(err.message || 'Failed to scaffold service');
-    }
+      setErrorMsg(err.message || "Failed to scaffold service");
+    },
   );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg('');
+    setErrorMsg("");
     createServiceMutation.mutate({ name, description, templateId });
   };
 
@@ -75,8 +87,13 @@ export function ServicesList() {
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold text-white tracking-tight">Service Catalog</h2>
-          <p className="text-sm text-slate-400">Scaffold and bootstrap standardization-compliant microservices using Golden Paths.</p>
+          <h2 className="text-2xl font-extrabold text-white tracking-tight">
+            Service Catalog
+          </h2>
+          <p className="text-sm text-slate-400">
+            Scaffold and bootstrap standardization-compliant microservices using
+            Golden Paths.
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -134,13 +151,21 @@ export function ServicesList() {
         </div>
       ) : !orgs || orgs.length === 0 ? (
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center max-w-xl mx-auto space-y-4">
-          <h3 className="text-lg font-bold text-white">No Organizations Available</h3>
-          <p className="text-sm text-slate-400">Please create an organization first before creating services.</p>
+          <h3 className="text-lg font-bold text-white">
+            No Organizations Available
+          </h3>
+          <p className="text-sm text-slate-400">
+            Please create an organization first before creating services.
+          </p>
         </div>
       ) : !projects || projects.length === 0 ? (
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center max-w-xl mx-auto space-y-4">
-          <h3 className="text-lg font-bold text-white">No Projects Available</h3>
-          <p className="text-sm text-slate-400">Please create a project inside the selected organization first.</p>
+          <h3 className="text-lg font-bold text-white">
+            No Projects Available
+          </h3>
+          <p className="text-sm text-slate-400">
+            Please create a project inside the selected organization first.
+          </p>
         </div>
       ) : servicesLoading ? (
         <div className="h-64 flex items-center justify-center">
@@ -149,7 +174,10 @@ export function ServicesList() {
       ) : services && services.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {services.map((svc) => (
-            <div key={svc.ID} className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between hover:border-slate-700 transition-colors">
+            <div
+              key={svc.ID}
+              className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between hover:border-slate-700 transition-colors"
+            >
               <div className="space-y-4">
                 <div className="flex justify-between items-start">
                   <div className="p-3 bg-slate-800 border border-slate-700 rounded-2xl text-indigo-400">
@@ -160,8 +188,12 @@ export function ServicesList() {
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white tracking-tight">{svc.Name}</h3>
-                  <p className="text-sm text-slate-400 mt-1 line-clamp-2">{svc.Description || 'No description provided.'}</p>
+                  <h3 className="text-lg font-bold text-white tracking-tight">
+                    {svc.Name}
+                  </h3>
+                  <p className="text-sm text-slate-400 mt-1 line-clamp-2">
+                    {svc.Description || "No description provided."}
+                  </p>
                 </div>
               </div>
 
@@ -192,7 +224,8 @@ export function ServicesList() {
           </div>
           <h3 className="text-lg font-bold text-white">No Services Found</h3>
           <p className="text-sm text-slate-400">
-            No services have been scaffolded in this project yet. Start a new Golden Path now!
+            No services have been scaffolded in this project yet. Start a new
+            Golden Path now!
           </p>
           <button
             onClick={() => setModalOpen(true)}
@@ -208,8 +241,13 @@ export function ServicesList() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl relative">
             <div className="p-6 border-b border-slate-800 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-white">Scaffold New Microservice</h3>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-200 cursor-pointer">
+              <h3 className="text-lg font-bold text-white">
+                Scaffold New Microservice
+              </h3>
+              <button
+                onClick={() => setModalOpen(false)}
+                className="text-slate-400 hover:text-slate-200 cursor-pointer"
+              >
                 <X className="h-6 w-6" />
               </button>
             </div>
@@ -223,7 +261,9 @@ export function ServicesList() {
               )}
 
               <div>
-                <label className="block text-sm font-semibold text-slate-300">Service Name</label>
+                <label className="block text-sm font-semibold text-slate-300">
+                  Service Name
+                </label>
                 <input
                   type="text"
                   required
@@ -235,7 +275,9 @@ export function ServicesList() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-300">Description</label>
+                <label className="block text-sm font-semibold text-slate-300">
+                  Description
+                </label>
                 <textarea
                   rows={2}
                   value={description}
@@ -246,7 +288,9 @@ export function ServicesList() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-3">Select Golden Path Template</label>
+                <label className="block text-sm font-semibold text-slate-300 mb-3">
+                  Select Golden Path Template
+                </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {templates &&
                     templates.map((tmpl) => (
@@ -255,13 +299,17 @@ export function ServicesList() {
                         onClick={() => setTemplateId(tmpl.id)}
                         className={`p-4 border rounded-2xl cursor-pointer flex flex-col justify-between gap-2 transition-all ${
                           templateId === tmpl.id
-                            ? 'border-indigo-500 bg-indigo-500/5'
-                            : 'border-slate-800 bg-slate-950 hover:border-slate-700'
+                            ? "border-indigo-500 bg-indigo-500/5"
+                            : "border-slate-800 bg-slate-950 hover:border-slate-700"
                         }`}
                       >
                         <div>
-                          <h4 className="font-bold text-sm text-slate-200">{tmpl.name}</h4>
-                          <p className="text-xs text-slate-400 mt-1">{tmpl.description}</p>
+                          <h4 className="font-bold text-sm text-slate-200">
+                            {tmpl.name}
+                          </h4>
+                          <p className="text-xs text-slate-400 mt-1">
+                            {tmpl.description}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -284,7 +332,7 @@ export function ServicesList() {
                   {createServiceMutation.isPending ? (
                     <Loader2 className="animate-spin h-5 w-5 text-white" />
                   ) : (
-                    'Scaffold & Push'
+                    "Scaffold & Push"
                   )}
                 </button>
               </div>
@@ -302,14 +350,19 @@ export function ServicesList() {
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-2xl font-extrabold text-white tracking-tight">Microservice Scaffolded!</h3>
+              <h3 className="text-2xl font-extrabold text-white tracking-tight">
+                Microservice Scaffolded!
+              </h3>
               <p className="text-sm text-slate-400 max-w-md mx-auto">
-                Your new service codebase has been successfully created and pushed to your remote GitHub repository.
+                Your new service codebase has been successfully created and
+                pushed to your remote GitHub repository.
               </p>
             </div>
 
             <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3 text-left">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Repository URL</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                Repository URL
+              </span>
               <a
                 href={generatedRepoUrl}
                 target="_blank"
@@ -333,7 +386,11 @@ export function ServicesList() {
                   onClick={handleCopy}
                   className="p-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-400 hover:text-slate-200 cursor-pointer transition-colors shrink-0"
                 >
-                  {copied ? <Check className="h-4 w-4 text-teal-400" /> : <Copy className="h-4 w-4" />}
+                  {copied ? (
+                    <Check className="h-4 w-4 text-teal-400" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
                 </button>
               </div>
             </div>

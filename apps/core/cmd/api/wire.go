@@ -34,6 +34,8 @@ import (
 	"lokiforce.com/apps/core/internal/user/domain"
 	"lokiforce.com/apps/core/internal/user/infrastructure/jwt"
 	"lokiforce.com/apps/core/internal/user/infrastructure/repository"
+	"lokiforce.com/apps/core/pkg/mail"
+	"lokiforce.com/apps/core/pkg/mq"
 )
 
 func ProvideDB(cfg *config.Config) (*gorm.DB, error) {
@@ -67,6 +69,8 @@ func InitializeApp(cfg *config.Config) (*Handlers, error) {
 	wire.Build(
 		ProvideDB,
 		ProvideTokenService,
+		mq.NewInMemoryMQ,
+		mail.NewMockMailService,
 
 		repository.NewPostgresUserRepository,
 		wire.Bind(new(domain.UserRepository), new(*repository.PostgresUserRepository)),

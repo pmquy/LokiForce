@@ -34,7 +34,7 @@ func TestResponse_OK(t *testing.T) {
 		t.Errorf("Expected Success to be true")
 	}
 
-	dataMap, ok := res.Data.(map[string]interface{})
+	dataMap, ok := res.Data.(map[string]any)
 	if !ok || dataMap["foo"] != "bar" {
 		t.Errorf("Expected Data to contain foo: bar, got %v", res.Data)
 	}

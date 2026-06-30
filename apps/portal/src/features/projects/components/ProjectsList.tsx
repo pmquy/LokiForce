@@ -1,44 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import { useOrganizationsQuery } from '../../organizations/hooks/useOrganizations';
-import { useProjectsQuery, useCreateProjectMutation } from '../hooks/useProjects';
-import { FolderKanban, Plus, Loader2, X, AlertCircle, ChevronDown, Building2 } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useOrganizationsQuery } from "../../organizations/hooks/useOrganizations";
+import {
+  useProjectsQuery,
+  useCreateProjectMutation,
+} from "../hooks/useProjects";
+import {
+  FolderKanban,
+  Plus,
+  Loader2,
+  X,
+  AlertCircle,
+  ChevronDown,
+  Building2,
+} from "lucide-react";
 
 export function ProjectsList() {
-  const [selectedOrgId, setSelectedOrgId] = useState<string>('');
+  const [selectedOrgId, setSelectedOrgId] = useState<string>("");
   const [modalOpen, setModalOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
-  // 1. Fetch organizations
   const { data: orgs, isLoading: orgsLoading } = useOrganizationsQuery();
 
-  // Set default organization once loaded
   useEffect(() => {
     if (orgs && orgs.length > 0 && !selectedOrgId) {
       setSelectedOrgId(orgs[0].ID);
     }
   }, [orgs, selectedOrgId]);
 
-  // 2. Fetch projects under the selected organization
-  const { data: projects, isLoading: projectsLoading } = useProjectsQuery(selectedOrgId);
+  const { data: projects, isLoading: projectsLoading } =
+    useProjectsQuery(selectedOrgId);
 
-  // Create project mutation
   const createProjMutation = useCreateProjectMutation(
     selectedOrgId,
     () => {
       setModalOpen(false);
-      setName('');
-      setDescription('');
+      setName("");
+      setDescription("");
     },
     (err: any) => {
-      setErrorMsg(err.message || 'Failed to create project');
-    }
+      setErrorMsg(err.message || "Failed to create project");
+    },
   );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg('');
+    setErrorMsg("");
     createProjMutation.mutate({ name, description });
   };
 
@@ -46,8 +54,13 @@ export function ProjectsList() {
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold text-white tracking-tight">Projects</h2>
-          <p className="text-sm text-slate-400">Manage code repositories, services, and environments grouped under projects.</p>
+          <h2 className="text-2xl font-extrabold text-white tracking-tight">
+            Projects
+          </h2>
+          <p className="text-sm text-slate-400">
+            Manage code repositories, services, and environments grouped under
+            projects.
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -89,9 +102,12 @@ export function ProjectsList() {
           <div className="p-4 bg-slate-800 border border-slate-700 rounded-full w-fit mx-auto text-slate-400">
             <Building2 className="h-8 w-8" />
           </div>
-          <h3 className="text-lg font-bold text-white">No Organizations Available</h3>
+          <h3 className="text-lg font-bold text-white">
+            No Organizations Available
+          </h3>
           <p className="text-sm text-slate-400">
-            You must create or join an organization before you can manage projects.
+            You must create or join an organization before you can manage
+            projects.
           </p>
         </div>
       ) : projectsLoading ? (
@@ -101,13 +117,20 @@ export function ProjectsList() {
       ) : projects && projects.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((proj) => (
-            <div key={proj.ID} className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between hover:border-slate-700 transition-colors">
+            <div
+              key={proj.ID}
+              className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between hover:border-slate-700 transition-colors"
+            >
               <div className="space-y-3">
                 <div className="p-3 w-fit bg-slate-800 border border-slate-700 rounded-2xl text-teal-400">
                   <FolderKanban className="h-6 w-6" />
                 </div>
-                <h3 className="text-lg font-bold text-white tracking-tight">{proj.Name}</h3>
-                <p className="text-sm text-slate-400 line-clamp-2">{proj.Description || 'No description provided.'}</p>
+                <h3 className="text-lg font-bold text-white tracking-tight">
+                  {proj.Name}
+                </h3>
+                <p className="text-sm text-slate-400 line-clamp-2">
+                  {proj.Description || "No description provided."}
+                </p>
               </div>
               <div className="mt-6 pt-4 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-500">
                 <span>Org ID: {proj.OrgID.substring(0, 8)}...</span>
@@ -122,7 +145,8 @@ export function ProjectsList() {
           </div>
           <h3 className="text-lg font-bold text-white">No Projects Found</h3>
           <p className="text-sm text-slate-400">
-            No projects exist under the selected organization. Create one to start scaffolding microservices!
+            No projects exist under the selected organization. Create one to
+            start scaffolding microservices!
           </p>
           <button
             onClick={() => setModalOpen(true)}
@@ -139,7 +163,10 @@ export function ProjectsList() {
           <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative">
             <div className="p-6 border-b border-slate-800 flex justify-between items-center">
               <h3 className="text-lg font-bold text-white">New Project</h3>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-200 cursor-pointer">
+              <button
+                onClick={() => setModalOpen(false)}
+                className="text-slate-400 hover:text-slate-200 cursor-pointer"
+              >
                 <X className="h-6 w-6" />
               </button>
             </div>
@@ -153,7 +180,9 @@ export function ProjectsList() {
               )}
 
               <div>
-                <label className="block text-sm font-semibold text-slate-300">Name</label>
+                <label className="block text-sm font-semibold text-slate-300">
+                  Name
+                </label>
                 <input
                   type="text"
                   required
@@ -165,7 +194,9 @@ export function ProjectsList() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-300">Description</label>
+                <label className="block text-sm font-semibold text-slate-300">
+                  Description
+                </label>
                 <textarea
                   rows={3}
                   value={description}
@@ -191,7 +222,7 @@ export function ProjectsList() {
                   {createProjMutation.isPending ? (
                     <Loader2 className="animate-spin h-5 w-5 text-white" />
                   ) : (
-                    'Create'
+                    "Create"
                   )}
                 </button>
               </div>

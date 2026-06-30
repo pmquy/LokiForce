@@ -1,7 +1,22 @@
-import { useEffect, useState } from 'react';
-import { Outlet, Link, useNavigate, useRouterState } from '@tanstack/react-router';
-import { Shield, LayoutDashboard, Building2, FolderKanban, Cpu, LogOut, Menu, X, User } from 'lucide-react';
-import { apiRequest } from '../services/api';
+import { useEffect, useState } from "react";
+import {
+  Outlet,
+  Link,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
+import {
+  Shield,
+  LayoutDashboard,
+  Building2,
+  FolderKanban,
+  Cpu,
+  LogOut,
+  Menu,
+  X,
+  User,
+} from "lucide-react";
+import { apiRequest } from "../services/api";
 
 interface UserProfile {
   ID: string;
@@ -17,31 +32,30 @@ export function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('lokiforce_token');
+    const token = localStorage.getItem("lokiforce_token");
     if (!token) {
-      navigate({ to: '/login' });
+      navigate({ to: "/login" });
       return;
     }
 
-    // Fetch user profile
-    apiRequest<UserProfile>('/users/profile')
+    apiRequest<UserProfile>("/users/profile")
       .then(setProfile)
       .catch(() => {
-        localStorage.removeItem('lokiforce_token');
-        navigate({ to: '/login' });
+        localStorage.removeItem("lokiforce_token");
+        navigate({ to: "/login" });
       });
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem('lokiforce_token');
-    navigate({ to: '/login' });
+    localStorage.removeItem("lokiforce_token");
+    navigate({ to: "/login" });
   };
 
   const navLinks = [
-    { name: 'Dashboard', to: '/', icon: LayoutDashboard },
-    { name: 'Organizations', to: '/organizations', icon: Building2 },
-    { name: 'Projects', to: '/projects', icon: FolderKanban },
-    { name: 'Services', to: '/services', icon: Cpu },
+    { name: "Dashboard", to: "/", icon: LayoutDashboard },
+    { name: "Organizations", to: "/organizations", icon: Building2 },
+    { name: "Projects", to: "/projects", icon: FolderKanban },
+    { name: "Services", to: "/services", icon: Cpu },
   ];
 
   if (!profile) {
@@ -75,11 +89,13 @@ export function DashboardLayout() {
                 to={link.to}
                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
                   isActive
-                    ? 'bg-gradient-to-r from-indigo-500/20 to-teal-500/10 text-white border border-indigo-500/20'
-                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                    ? "bg-gradient-to-r from-indigo-500/20 to-teal-500/10 text-white border border-indigo-500/20"
+                    : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
                 }`}
               >
-                <Icon className={`h-5 w-5 ${isActive ? 'text-indigo-400' : 'text-slate-500'}`} />
+                <Icon
+                  className={`h-5 w-5 ${isActive ? "text-indigo-400" : "text-slate-500"}`}
+                />
                 {link.name}
               </Link>
             );
@@ -92,7 +108,9 @@ export function DashboardLayout() {
               {profile.Username.substring(0, 2).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-slate-200 truncate">{profile.Username}</p>
+              <p className="text-sm font-bold text-slate-200 truncate">
+                {profile.Username}
+              </p>
               <p className="text-xs text-slate-500 truncate">{profile.Email}</p>
             </div>
           </div>
@@ -108,13 +126,16 @@ export function DashboardLayout() {
 
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
+        <div
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
       {/* Sidebar - Mobile */}
       <aside
         className={`fixed inset-y-0 left-0 w-64 bg-slate-900 border-r border-slate-800 z-50 transform md:hidden transition-transform duration-300 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800">
@@ -124,7 +145,10 @@ export function DashboardLayout() {
             </div>
             <span className="font-extrabold text-xl text-white">LokiForce</span>
           </div>
-          <button onClick={() => setSidebarOpen(false)} className="text-slate-400 hover:text-slate-200 cursor-pointer">
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="text-slate-400 hover:text-slate-200 cursor-pointer"
+          >
             <X className="h-6 w-6" />
           </button>
         </div>
@@ -140,8 +164,8 @@ export function DashboardLayout() {
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
                   isActive
-                    ? 'bg-gradient-to-r from-indigo-500/20 to-teal-500/10 text-white border border-indigo-500/20'
-                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                    ? "bg-gradient-to-r from-indigo-500/20 to-teal-500/10 text-white border border-indigo-500/20"
+                    : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
                 }`}
               >
                 <Icon className="h-5 w-5" />
@@ -157,7 +181,9 @@ export function DashboardLayout() {
               {profile.Username.substring(0, 2).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-slate-200 truncate">{profile.Username}</p>
+              <p className="text-sm font-bold text-slate-200 truncate">
+                {profile.Username}
+              </p>
               <p className="text-xs text-slate-500 truncate">{profile.Email}</p>
             </div>
           </div>
@@ -182,7 +208,8 @@ export function DashboardLayout() {
               <Menu className="h-6 w-6" />
             </button>
             <h1 className="text-lg font-bold text-white tracking-wide">
-              {navLinks.find((l) => l.to === routerState.location.pathname)?.name || 'Dashboard'}
+              {navLinks.find((l) => l.to === routerState.location.pathname)
+                ?.name || "Dashboard"}
             </h1>
           </div>
 
