@@ -158,3 +158,24 @@ Sử dụng `response.Fail(c, statusCode, errorMsg)`. Định dạng JSON đầu
   * Mã nguồn khung cục bộ được tự động khởi tạo Git (`git init`), commit và push (`git push`) lên Repository từ xa, sau đó xoá sạch thư mục tạm.
   * URL của Repository mới được lưu lại vào cơ sở dữ liệu làm thông tin tham chiếu cho Service.
 
+## 10. Portal UI (Frontend Web Portal)
+
+* **Công nghệ cốt lõi:**
+  * Framework: React & TypeScript (khởi tạo qua Vite).
+  * Routing: **TanStack Router** (quản lý route định nghĩa trong `router.tsx` đảm bảo type-safety).
+  * Data Fetching: **TanStack Query** (React Query) giúp quản lý cache và đồng bộ dữ liệu API từ Go Backend.
+  * Styling: **Tailwind CSS v4** (sử dụng plugin `@tailwindcss/vite` tích hợp trực tiếp, không cần config postcss hay tailwind.config.js cổ điển).
+* **Cấu trúc thư mục Feature-based:**
+  * Đặt tại `src/features/` chia theo từng tính năng nghiệp vụ (e.g. `auth`, `organizations`, `projects`, `services`).
+  * Cấu trúc mỗi tính năng:
+    ```text
+    src/features/feature_name/
+    ├── components/    # Chứa các component giao diện React (UI)
+    ├── services/      # Chứa các hàm gọi API tương ứng của feature
+    └── hooks/         # Chứa các custom hooks hoặc react-query hooks (queries/mutations)
+    ```
+* **Shared Components & Services:**
+  * `src/components/`: Các component dùng chung cho toàn dự án (Sidebar Layout, Button, Input, Modal...).
+  * `src/services/api.ts`: API Client dùng chung viết bằng Fetch/Axios hỗ trợ tự động đính kèm JWT Authorization header.
+
+
