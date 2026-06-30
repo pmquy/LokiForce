@@ -42,11 +42,6 @@ type createRepoResponse struct {
 func (g *GitHubVersionControl) CreateRepository(ctx context.Context, config application.RepositoryConfig) (string, error) {
 	repoName := g.prefix + config.Name
 
-	if g.token == "" || g.token == "mock_token" {
-		mockURL := fmt.Sprintf("https://github.com/%s/%s.git", g.owner, repoName)
-		return mockURL, nil
-	}
-
 	reqBody := createRepoRequest{
 		Name:        repoName,
 		Description: config.Description,
