@@ -65,10 +65,10 @@ func (u *serviceUsecaseImpl) CreateService(ctx context.Context, input CreateServ
 		return CreateServiceOutput{}, err
 	}
 
-	uniqueRepoName := fmt.Sprintf("%s-%s", svc.Name, svc.ID[:8])
-	slog.Info("Creating Git repository", "name", uniqueRepoName)
+	repoName := svc.ID
+	slog.Info("Creating Git repository", "name", repoName)
 	repoConfig := RepositoryConfig{
-		Name:        uniqueRepoName,
+		Name:        repoName,
 		Description: svc.Description,
 		Private:     false,
 	}
@@ -77,14 +77,16 @@ func (u *serviceUsecaseImpl) CreateService(ctx context.Context, input CreateServ
 		return CreateServiceOutput{}, fmt.Errorf("failed to create Git repository: %w", err)
 	}
 
+	slog.Info("Resolved actual Git repository name", "actualName", repoName)
+
 	slog.Info("Scaffolding and pushing files to Git repository in-memory", "url", repoURL)
-	if err := u.versionControl.PushFiles(ctx, repoURL, matchTemplate.Path, uniqueRepoName); err != nil {
+	if err := u.versionControl.PushFiles(ctx, repoURL, matchTemplate.Path, repoName); err != nil {
 		return CreateServiceOutput{}, fmt.Errorf("failed to push template code: %w", err)
 	}
 
-	slog.Info("Registering GitOps Deployment (Argo CD)", "serviceName", uniqueRepoName)
+	slog.Info("Registering GitOps Deployment (Argo CD)", "serviceName", repoName)
 	deployConfig := DeploymentConfig{
-		ServiceName:   uniqueRepoName,
+		ServiceName:   repoName,
 		RepositoryURL: repoURL,
 		Namespace:     "production",
 		Environment:   input.ProjectID,

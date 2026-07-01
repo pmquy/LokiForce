@@ -49,7 +49,7 @@ type createRepoResponse struct {
 }
 
 func (g *GitHubVersionControl) CreateRepository(ctx context.Context, config application.RepositoryConfig) (string, error) {
-	repoName := g.prefix + config.Name
+	repoName := config.Name
 
 	reqBody := createRepoRequest{
 		Name:        repoName,
