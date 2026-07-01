@@ -65,7 +65,7 @@ func (u *serviceUsecaseImpl) CreateService(ctx context.Context, input CreateServ
 		return CreateServiceOutput{}, err
 	}
 
-	repoName := svc.ID
+	repoName := svc.GetExternalName()
 	slog.Info("Creating Git repository", "name", repoName)
 	repoConfig := RepositoryConfig{
 		Name:        repoName,
@@ -156,6 +156,22 @@ func (u *serviceUsecaseImpl) UpdateService(ctx context.Context, input UpdateServ
 }
 
 func (u *serviceUsecaseImpl) DeleteService(ctx context.Context, id string) error {
+	svc, err := u.repository.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	repoName := svc.GetExternalName()
+	if repoName != "" {
+		if err := u.deploymentControl.DeleteDeployment(ctx, repoName); err != nil {
+			slog.Error("Failed to delete Argo CD deployment during service deletion", "repo", repoName, "error", err)
+		}
+
+		if err := u.versionControl.DeleteRepository(ctx, repoName); err != nil {
+			slog.Error("Failed to delete GitHub repository during service deletion", "repo", repoName, "error", err)
+		}
+	}
+
 	return u.repository.Delete(ctx, id)
 }
 

@@ -11,4 +11,5 @@ type DeploymentConfig struct {
 
 type DeploymentControl interface {
 	RegisterDeployment(ctx context.Context, config DeploymentConfig) (string, error)
+	DeleteDeployment(ctx context.Context, serviceName string) error
 }

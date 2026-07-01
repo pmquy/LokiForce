@@ -9,6 +9,8 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"lokiforce.com/apps/core/internal/config"
 	"lokiforce.com/apps/core/internal/service/application"
@@ -96,4 +98,90 @@ spec:
 	remoteURL := fmt.Sprintf("https://github.com/%s/%s/blob/main/apps/%s-argocd.yaml", a.owner, a.gitopsRepo, config.ServiceName)
 	slog.Info("Argo CD Application manifest committed to remote GitOps repo successfully", "url", remoteURL)
 	return remoteURL, nil
+}
+
+func (a *ArgoCDDeployment) DeleteDeployment(ctx context.Context, serviceName string) error {
+
+	if a.token == "" || a.token == "mock_token" {
+		gitopsDir := "./scratch/gitops-manifests"
+		filePath := filepath.Join(gitopsDir, fmt.Sprintf("%s-argocd.yaml", serviceName))
+		if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to delete local manifest: %w", err)
+		}
+		slog.Info("Argo CD Application manifest deleted locally (Mock GitOps)", "path", filePath)
+		return nil
+	}
+
+	slog.Info("Fetching manifest info from GitOps repo to obtain SHA for deletion", "repo", a.gitopsRepo, "file", serviceName)
+	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/apps/%s-argocd.yaml", a.owner, a.gitopsRepo, serviceName)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+a.token)
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		slog.Info("Argo CD manifest not found in GitOps repo, skipping deletion", "repo", a.gitopsRepo, "file", serviceName)
+		return nil
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("failed to get manifest info: status %d, response %s", resp.StatusCode, string(respBody))
+	}
+
+	type fileInfoResponse struct {
+		SHA string `json:"sha"`
+	}
+	var fileInfo fileInfoResponse
+	if err := json.NewDecoder(resp.Body).Decode(&fileInfo); err != nil {
+		return err
+	}
+
+	slog.Info("Deleting Argo CD manifest from remote GitOps repo", "repo", a.gitopsRepo, "file", serviceName, "sha", fileInfo.SHA)
+	type deleteContentRequest struct {
+		Message string `json:"message"`
+		SHA     string `json:"sha"`
+	}
+	reqBody := deleteContentRequest{
+		Message: fmt.Sprintf("Delete ArgoCD Application for service %s", serviceName),
+		SHA:     fileInfo.SHA,
+	}
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return err
+	}
+
+	reqDel, err := http.NewRequestWithContext(ctx, "DELETE", apiURL, bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		return err
+	}
+	reqDel.Header.Set("Authorization", "Bearer "+a.token)
+	reqDel.Header.Set("Accept", "application/vnd.github+json")
+	reqDel.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	reqDel.Header.Set("Content-Type", "application/json")
+
+	respDel, err := client.Do(reqDel)
+	if err != nil {
+		return err
+	}
+	defer respDel.Body.Close()
+
+	if respDel.StatusCode != http.StatusOK && respDel.StatusCode != http.StatusNotFound {
+		respBody, _ := io.ReadAll(respDel.Body)
+		return fmt.Errorf("failed to delete manifest from GitOps repo: status %d, response %s", respDel.StatusCode, string(respBody))
+	}
+
+	slog.Info("Argo CD Application manifest deleted from remote GitOps repo successfully", "repo", a.gitopsRepo, "file", serviceName)
+	return nil
 }

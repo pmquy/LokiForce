@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"log/slog"
 	"text/template"
 	"time"
 
@@ -222,3 +223,33 @@ func copyToMemFS(src string, fs billy.Filesystem, dst string, data any) error {
 	}
 	return nil
 }
+
+func (g *GitHubVersionControl) DeleteRepository(ctx context.Context, name string) error {
+	slog.Info("Deleting remote Git repository", "owner", g.owner, "repo", name)
+
+	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s", g.owner, name)
+	req, err := http.NewRequestWithContext(ctx, "DELETE", apiURL, nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+g.token)
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusNotFound {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("github delete api failed with status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	slog.Info("Remote Git repository deleted successfully", "owner", g.owner, "repo", name)
+	return nil
+}
+

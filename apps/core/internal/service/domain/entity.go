@@ -29,3 +29,7 @@ func NewService(id, name, description, projectID, templateID string) (*Service, 
 		TemplateID:  templateID,
 	}, nil
 }
+
+func (s *Service) GetExternalName() string {
+	return s.ID
+}

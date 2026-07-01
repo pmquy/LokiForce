@@ -46,3 +46,20 @@ export async function createService(
     }),
   });
 }
+
+export async function deleteService(id: string): Promise<any> {
+  return apiRequest<any>(`/services/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function updateService(
+  id: string,
+  name: string,
+  description: string,
+): Promise<any> {
+  return apiRequest<any>(`/services/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ name, description }),
+  });
+}

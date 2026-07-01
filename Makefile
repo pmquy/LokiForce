@@ -8,7 +8,7 @@ install:
 
 run-backend:
 	@echo "Starting Go backend with Air hot reload..."
-	cd apps/core && go run github.com/air-verse/air
+	cd apps/core && go run ./cmd/api/
 
 run-frontend:
 	@echo "Starting React frontend with Vite..."
