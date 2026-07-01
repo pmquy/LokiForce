@@ -9,8 +9,6 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"os"
-	"path/filepath"
 
 	"lokiforce.com/apps/core/internal/config"
 	"lokiforce.com/apps/core/internal/service/application"
@@ -101,16 +99,6 @@ spec:
 }
 
 func (a *ArgoCDDeployment) DeleteDeployment(ctx context.Context, serviceName string) error {
-
-	if a.token == "" || a.token == "mock_token" {
-		gitopsDir := "./scratch/gitops-manifests"
-		filePath := filepath.Join(gitopsDir, fmt.Sprintf("%s-argocd.yaml", serviceName))
-		if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("failed to delete local manifest: %w", err)
-		}
-		slog.Info("Argo CD Application manifest deleted locally (Mock GitOps)", "path", filePath)
-		return nil
-	}
 
 	slog.Info("Fetching manifest info from GitOps repo to obtain SHA for deletion", "repo", a.gitopsRepo, "file", serviceName)
 	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/apps/%s-argocd.yaml", a.owner, a.gitopsRepo, serviceName)
