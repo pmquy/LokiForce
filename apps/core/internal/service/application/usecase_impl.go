@@ -25,14 +25,20 @@ var AvailableTemplates = []Template{
 }
 
 type serviceUsecaseImpl struct {
-	repository     domain.ServiceRepository
-	versionControl VersionControl
+	repository        domain.ServiceRepository
+	versionControl    VersionControl
+	deploymentControl DeploymentControl
 }
 
-func NewServiceUsecase(repo domain.ServiceRepository, vc VersionControl) ServiceUsecase {
+func NewServiceUsecase(
+	repo domain.ServiceRepository,
+	vc VersionControl,
+	dc DeploymentControl,
+) ServiceUsecase {
 	return &serviceUsecaseImpl{
-		repository:     repo,
-		versionControl: vc,
+		repository:        repo,
+		versionControl:    vc,
+		deploymentControl: dc,
 	}
 }
 
@@ -72,8 +78,20 @@ func (u *serviceUsecaseImpl) CreateService(ctx context.Context, input CreateServ
 	}
 
 	slog.Info("Scaffolding and pushing files to Git repository in-memory", "url", repoURL)
-	if err := u.versionControl.PushFiles(ctx, repoURL, matchTemplate.Path, svc.Name); err != nil {
+	if err := u.versionControl.PushFiles(ctx, repoURL, matchTemplate.Path, uniqueRepoName); err != nil {
 		return CreateServiceOutput{}, fmt.Errorf("failed to push template code: %w", err)
+	}
+
+	slog.Info("Registering GitOps Deployment (Argo CD)", "serviceName", uniqueRepoName)
+	deployConfig := DeploymentConfig{
+		ServiceName:   uniqueRepoName,
+		RepositoryURL: repoURL,
+		Namespace:     "production",
+		Environment:   input.ProjectID,
+	}
+	_, err = u.deploymentControl.RegisterDeployment(ctx, deployConfig)
+	if err != nil {
+		return CreateServiceOutput{}, fmt.Errorf("failed to register deployment: %w", err)
 	}
 
 	svc.Repository = repoURL

@@ -1,5 +1,3 @@
-module lokiforce.com/scaffold/golang
+module lokiforce.com/apps/{{.ServiceName}}
 
-go 1.21
-
-require github.com/gin-gonic/gin v1.9.1
+go 1.22

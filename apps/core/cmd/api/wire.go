@@ -23,6 +23,7 @@ import (
 	serviceDomain "lokiforce.com/apps/core/internal/service/domain"
 	serviceRepo "lokiforce.com/apps/core/internal/service/infrastructure/repository"
 	serviceVc "lokiforce.com/apps/core/internal/service/infrastructure/versioncontrol"
+	"lokiforce.com/apps/core/internal/service/infrastructure/deployment"
 
 	teamApp "lokiforce.com/apps/core/internal/team/application"
 	teamHttp "lokiforce.com/apps/core/internal/team/delivery/http"
@@ -95,6 +96,7 @@ func InitializeApp(cfg *config.Config) (*Handlers, error) {
 		serviceRepo.NewPostgresServiceRepository,
 		wire.Bind(new(serviceDomain.ServiceRepository), new(*serviceRepo.PostgresServiceRepository)),
 		serviceVc.NewGitHubVersionControl,
+		deployment.NewArgoCDDeployment,
 		serviceApp.NewServiceUsecase,
 		serviceHttp.NewServiceHandler,
 

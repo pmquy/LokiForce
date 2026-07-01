@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
+	"text/template"
 	"time"
 
 	"github.com/go-git/go-billy/v5"
@@ -101,7 +101,12 @@ func (g *GitHubVersionControl) PushFiles(ctx context.Context, repoURL string, te
 		return fmt.Errorf("failed to init in-memory git repository: %w", err)
 	}
 
-	if err := copyToMemFS(templateDir, fs, "", serviceName); err != nil {
+	data := map[string]any{
+		"ServiceName": serviceName,
+		"Port":        "8080",
+	}
+
+	if err := copyToMemFS(templateDir, fs, "", data); err != nil {
 		return fmt.Errorf("failed to load template files into memory: %w", err)
 	}
 
@@ -171,7 +176,7 @@ func (g *GitHubVersionControl) PushFiles(ctx context.Context, repoURL string, te
 	return nil
 }
 
-func copyToMemFS(src string, fs billy.Filesystem, dst string, serviceName string) error {
+func copyToMemFS(src string, fs billy.Filesystem, dst string, data any) error {
 	entries, err := os.ReadDir(src)
 	if err != nil {
 		return err
@@ -185,26 +190,30 @@ func copyToMemFS(src string, fs billy.Filesystem, dst string, serviceName string
 			if err := fs.MkdirAll(dstPath, 0755); err != nil {
 				return err
 			}
-			if err := copyToMemFS(srcPath, fs, dstPath, serviceName); err != nil {
+			if err := copyToMemFS(srcPath, fs, dstPath, data); err != nil {
 				return err
 			}
 		} else {
-			data, err := os.ReadFile(srcPath)
+			fileBytes, err := os.ReadFile(srcPath)
 			if err != nil {
 				return err
 			}
 
-			content := string(data)
-			content = strings.ReplaceAll(content, "lokiforce.com/scaffold/golang", serviceName)
-			content = strings.ReplaceAll(content, "nodejs-scaffold", serviceName)
-			content = strings.ReplaceAll(content, "# Golang Service", "# "+serviceName)
-			content = strings.ReplaceAll(content, "# NodeJS Service", "# "+serviceName)
+			tmpl, err := template.New(entry.Name()).Parse(string(fileBytes))
+			if err != nil {
+				return fmt.Errorf("failed to parse template file %s: %w", entry.Name(), err)
+			}
+
+			var buf bytes.Buffer
+			if err := tmpl.Execute(&buf, data); err != nil {
+				return fmt.Errorf("failed to execute template file %s: %w", entry.Name(), err)
+			}
 
 			f, err := fs.Create(dstPath)
 			if err != nil {
 				return err
 			}
-			_, err = f.Write([]byte(content))
+			_, err = f.Write(buf.Bytes())
 			f.Close()
 			if err != nil {
 				return err

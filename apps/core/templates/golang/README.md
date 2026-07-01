@@ -1,7 +1,8 @@
-# Golang Service
-This is a standard Golang microservice template built with Gin Gonic.
+# {{.ServiceName}}
 
-## Running Locally
+This is a Golang microservice scaffolded dynamically by LokiForce.
+
+## Local Development
 ```bash
 go run main.go
 ```

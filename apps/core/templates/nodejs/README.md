@@ -1,7 +1,8 @@
-# NodeJS Service
-This is a standard Node.js microservice template built with Express.
+# {{.ServiceName}}
 
-## Running Locally
+This is a NodeJS microservice scaffolded dynamically by LokiForce.
+
+## Local Development
 ```bash
 npm install
 npm start

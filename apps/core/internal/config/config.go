@@ -33,9 +33,10 @@ type JWTConfig struct {
 }
 
 type GitHubConfig struct {
-	Token  string `mapstructure:"token"`
-	Owner  string `mapstructure:"owner"`
-	Prefix string `mapstructure:"prefix"`
+	Token      string `mapstructure:"token"`
+	Owner      string `mapstructure:"owner"`
+	Prefix     string `mapstructure:"prefix"`
+	GitOpsRepo string `mapstructure:"gitops_repo"`
 }
 
 func (c *Config) GetDatabaseURL() string {
@@ -60,6 +61,7 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("github.token", "")
 	viper.SetDefault("github.owner", "lokiforce-dev")
 	viper.SetDefault("github.prefix", "lkf-")
+	viper.SetDefault("github.gitops_repo", "gitops-infra")
 	viper.SetDefault("server.allowed_origins", []string{"http://localhost:5173"})
 
 	if err := viper.ReadInConfig(); err != nil {
