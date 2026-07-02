@@ -11,7 +11,7 @@ RUN go mod tidy && go mod download
 
 # Build static binary
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -ldflags="-s -w" -o main .
+    go build -ldflags="-s -w" -o main ./cmd/api/
 
 # ==========================
 # Runtime Stage
