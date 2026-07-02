@@ -9,6 +9,8 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 	"text/template"
 
 	"lokiforce.com/apps/core/internal/config"
@@ -34,141 +36,56 @@ type gitHubContentRequest struct {
 	Content string `json:"content"`
 }
 
-const deploymentTemplate = `apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {{.ServiceName}}
-  namespace: production
-  labels:
-    app: {{.ServiceName}}
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: {{.ServiceName}}
-  template:
-    metadata:
-      labels:
-        app: {{.ServiceName}}
-    spec:
-      containers:
-        - name: app
-          image: ghcr.io/{{.Owner}}/{{.ServiceName}}:latest
-          ports:
-            - containerPort: 8080
-          resources:
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
-            requests:
-              cpu: "100m"
-              memory: "128Mi"
-`
-
-const serviceTemplate = `apiVersion: v1
-kind: Service
-metadata:
-  name: {{.ServiceName}}
-  namespace: production
-  labels:
-    app: {{.ServiceName}}
-spec:
-  ports:
-    - port: 80
-      targetPort: 8080
-      protocol: TCP
-  selector:
-    app: {{.ServiceName}}
-  type: ClusterIP
-`
-
-const kustomizationTemplate = `apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources:
-  - deployment.yaml
-  - service.yaml
-images:
-  - name: ghcr.io/{{.Owner}}/{{.ServiceName}}
-    newTag: latest
-`
-
-const argocdTemplate = `apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: {{.ServiceName}}
-  namespace: argocd
-  annotations:
-    argocd-image-updater.argoproj.io/image-list: app=ghcr.io/{{.Owner}}/{{.ServiceName}}
-    argocd-image-updater.argoproj.io/app.update-strategy: latest
-    argocd-image-updater.argoproj.io/write-back-method: git:kustomize
-    argocd-image-updater.argoproj.io/write-back-path: manifests/{{.ServiceName}}
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  project: default
-  source:
-    repoURL: 'https://github.com/{{.Owner}}/{{.GitOpsRepo}}.git'
-    targetRevision: HEAD
-    path: manifests/{{.ServiceName}}
-  destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: {{.Namespace}}
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-`
-
 func (a *ArgoCDDeployment) RegisterDeployment(ctx context.Context, config application.DeploymentConfig) (string, error) {
 	if a.token == "" {
 		return "", fmt.Errorf("github token is empty: authorization failed")
 	}
 
-	renderStrTemplate := func(name string, tmplStr string) (string, error) {
-		tmpl, err := template.New(name).Parse(tmplStr)
+	data := map[string]interface{}{
+		"ServiceName": config.ServiceName,
+		"Owner":       a.owner,
+		"GitOpsRepo":  a.gitopsRepo,
+		"Namespace":   config.Namespace,
+	}
+
+	templateDir := "./templates/k8s"
+	entries, err := os.ReadDir(templateDir)
+	if err != nil {
+		return "", fmt.Errorf("failed to read template directory %s: %w", templateDir, err)
+	}
+
+	filesToWrite := make(map[string]string)
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		fileName := entry.Name()
+		filePath := filepath.Join(templateDir, fileName)
+
+		fileBytes, err := os.ReadFile(filePath)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("failed to read template file %s: %w", filePath, err)
 		}
-		data := map[string]any{
-			"ServiceName": config.ServiceName,
-			"Owner":       a.owner,
-			"GitOpsRepo":  a.gitopsRepo,
-			"Namespace":   config.Namespace,
+
+		tmpl, err := template.New(fileName).Parse(string(fileBytes))
+		if err != nil {
+			return "", fmt.Errorf("failed to parse template file %s: %w", fileName, err)
 		}
+
 		var buf bytes.Buffer
 		if err := tmpl.Execute(&buf, data); err != nil {
-			return "", err
+			return "", fmt.Errorf("failed to execute template file %s: %w", fileName, err)
 		}
-		return buf.String(), nil
-	}
 
-	argocdYaml, err := renderStrTemplate("argocd", argocdTemplate)
-	if err != nil {
-		return "", fmt.Errorf("failed to render argocd template: %w", err)
-	}
+		var destPath string
+		if fileName == "argocd.yaml" {
+			destPath = fmt.Sprintf("apps/%s-argocd.yaml", config.ServiceName)
+		} else {
+			destPath = fmt.Sprintf("manifests/%s/%s", config.ServiceName, fileName)
+		}
 
-	deploymentYaml, err := renderStrTemplate("deployment", deploymentTemplate)
-	if err != nil {
-		return "", fmt.Errorf("failed to render deployment template: %w", err)
-	}
-
-	serviceYaml, err := renderStrTemplate("service", serviceTemplate)
-	if err != nil {
-		return "", fmt.Errorf("failed to render service template: %w", err)
-	}
-
-	kustomizationYaml, err := renderStrTemplate("kustomization", kustomizationTemplate)
-	if err != nil {
-		return "", fmt.Errorf("failed to render kustomization template: %w", err)
-	}
-
-	filesToWrite := map[string]string{
-		fmt.Sprintf("apps/%s-argocd.yaml", config.ServiceName):                 argocdYaml,
-		fmt.Sprintf("manifests/%s/deployment.yaml", config.ServiceName):         deploymentYaml,
-		fmt.Sprintf("manifests/%s/service.yaml", config.ServiceName):            serviceYaml,
-		fmt.Sprintf("manifests/%s/kustomization.yaml", config.ServiceName):      kustomizationYaml,
+		filesToWrite[destPath] = buf.String()
 	}
 
 	writeRemoteFile := func(path string, content string) error {
@@ -224,11 +141,25 @@ func (a *ArgoCDDeployment) DeleteDeployment(ctx context.Context, serviceName str
 		return fmt.Errorf("github token is empty: authorization failed")
 	}
 
-	filesToDelete := []string{
-		fmt.Sprintf("apps/%s-argocd.yaml", serviceName),
-		fmt.Sprintf("manifests/%s/deployment.yaml", serviceName),
-		fmt.Sprintf("manifests/%s/service.yaml", serviceName),
-		fmt.Sprintf("manifests/%s/kustomization.yaml", serviceName),
+	templateDir := "./templates/k8s"
+	entries, err := os.ReadDir(templateDir)
+	if err != nil {
+		return fmt.Errorf("failed to read template directory %s: %w", templateDir, err)
+	}
+
+	var filesToDelete []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		fileName := entry.Name()
+		var relPath string
+		if fileName == "argocd.yaml" {
+			relPath = fmt.Sprintf("apps/%s-argocd.yaml", serviceName)
+		} else {
+			relPath = fmt.Sprintf("manifests/%s/%s", serviceName, fileName)
+		}
+		filesToDelete = append(filesToDelete, relPath)
 	}
 
 	deleteRemoteFile := func(path string) error {
