@@ -3,6 +3,7 @@ package git
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -19,6 +20,8 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	githttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/storage/memory"
+	"golang.org/x/crypto/blake2b"
+	"golang.org/x/crypto/nacl/box"
 )
 
 type GitHubClient struct {
@@ -321,6 +324,110 @@ func (c *GitHubClient) PushFiles(ctx context.Context, repoURL string, files map[
 
 	slog.Info("Files pushed to remote repository successfully", "url", repoURL)
 	return nil
+}
+
+type gitHubPublicKeyResponse struct {
+	KeyID string `json:"key_id"`
+	Key   string `json:"key"`
+}
+
+type createGitHubSecretRequest struct {
+	EncryptedValue string `json:"encrypted_value"`
+	KeyID          string `json:"key_id"`
+}
+
+func (c *GitHubClient) CreateRepositorySecret(ctx context.Context, repo, secretName, secretValue string) error {
+	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/actions/secrets/public-key", c.owner, repo)
+	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
+	if err != nil {
+		return err
+	}
+
+	c.setHeaders(req)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("failed to fetch public key for repo %s: status %d, response %s", repo, resp.StatusCode, string(respBody))
+	}
+
+	var pubKey gitHubPublicKeyResponse
+	if err := json.NewDecoder(resp.Body).Decode(&pubKey); err != nil {
+		return err
+	}
+
+	encryptedVal, err := encryptSecret(pubKey.Key, secretValue)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt secret: %w", err)
+	}
+
+	reqBody := createGitHubSecretRequest{
+		EncryptedValue: encryptedVal,
+		KeyID:          pubKey.KeyID,
+	}
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return err
+	}
+
+	putURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/actions/secrets/%s", c.owner, repo, secretName)
+	putReq, err := http.NewRequestWithContext(ctx, "PUT", putURL, bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		return err
+	}
+
+	c.setHeaders(putReq)
+	putReq.Header.Set("Content-Type", "application/json")
+
+	putResp, err := client.Do(putReq)
+	if err != nil {
+		return err
+	}
+	defer putResp.Body.Close()
+
+	if putResp.StatusCode != http.StatusCreated && putResp.StatusCode != http.StatusNoContent {
+		respBody, _ := io.ReadAll(putResp.Body)
+		return fmt.Errorf("failed to put secret %s: status %d, response %s", secretName, putResp.StatusCode, string(respBody))
+	}
+
+	slog.Info("Successfully created repository secret", "repo", repo, "secret", secretName)
+	return nil
+}
+
+func encryptSecret(pubKeyBase64 string, secretValue string) (string, error) {
+	recipientPubKeyBytes, err := base64.StdEncoding.DecodeString(pubKeyBase64)
+	if err != nil {
+		return "", err
+	}
+	if len(recipientPubKeyBytes) != 32 {
+		return "", fmt.Errorf("invalid recipient public key length: expected 32 bytes, got %d", len(recipientPubKeyBytes))
+	}
+
+	var recipientPubKey [32]byte
+	copy(recipientPubKey[:], recipientPubKeyBytes)
+
+	ephemeralPubKey, ephemeralPrivKey, err := box.GenerateKey(rand.Reader)
+	if err != nil {
+		return "", err
+	}
+
+	h, err := blake2b.New(24, nil)
+	if err != nil {
+		return "", err
+	}
+	h.Write(ephemeralPubKey[:])
+	h.Write(recipientPubKeyBytes)
+	nonceBytes := h.Sum(nil)
+	var nonce [24]byte
+	copy(nonce[:], nonceBytes)
+
+	out := box.Seal(ephemeralPubKey[:], []byte(secretValue), &nonce, &recipientPubKey, ephemeralPrivKey)
+	return base64.StdEncoding.EncodeToString(out), nil
 }
 
 func (c *GitHubClient) setHeaders(req *http.Request) {

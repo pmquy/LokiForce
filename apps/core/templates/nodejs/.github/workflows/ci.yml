@@ -37,3 +37,20 @@ jobs:
           tags: |
             ghcr.io/{{.Owner}}/{{.ServiceName}}:latest
             ghcr.io/{{.Owner}}/{{.ServiceName}}:{{"${{ github.sha }}"}}
+
+      - name: Checkout GitOps Infra Repository
+        uses: actions/checkout@v4
+        with:
+          repository: {{.Owner}}/{{.GitOpsRepo}}
+          token: {{"${{ secrets.GITOPS_GIT_TOKEN }}"}}
+          path: gitops-infra
+
+      - name: Update Image Tag in GitOps Manifest
+        run: |
+          cd gitops-infra
+          yq -i '(.images[] | select(.name == "ghcr.io/{{.Owner}}/{{.ServiceName}}") | .newTag) = "{{"${{ github.sha }}"}}"' manifests/{{.ServiceName}}/kustomization.yaml
+          git config --global user.name "LokiForce CI Bot"
+          git config --global user.email "ci-bot@lokiforce.com"
+          git add manifests/{{.ServiceName}}/kustomization.yaml
+          git commit -m "deploy: update image tag for {{.ServiceName}} to {{"${{ github.sha }}"}} [skip ci]" || exit 0
+          git push

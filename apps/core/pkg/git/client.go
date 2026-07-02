@@ -12,4 +12,5 @@ type GitClient interface {
 	WriteFile(ctx context.Context, repo, path, content, message string) error
 	DeleteFile(ctx context.Context, repo, path, message string) error
 	PushFiles(ctx context.Context, repoURL string, files map[string][]byte, commitMessage string) error
+	CreateRepositorySecret(ctx context.Context, repo, secretName, secretValue string) error
 }
