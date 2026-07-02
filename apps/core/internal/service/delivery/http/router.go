@@ -13,5 +13,8 @@ func RegisterServiceRoutes(r *gin.RouterGroup, handler *ServiceHandler, authMidd
 		services.PUT("/:id", handler.Update)
 		services.DELETE("/:id", handler.Delete)
 		services.GET("/templates", handler.ListTemplates)
+		services.POST("/policies", handler.CreateAccessPolicy)
+		services.DELETE("/policies/:policyId", handler.DeleteAccessPolicy)
+		services.GET("/:id/policies", handler.ListAccessPolicies)
 	}
 }

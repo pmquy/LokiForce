@@ -190,11 +190,48 @@ func (u *serviceUsecaseImpl) CreateAccessPolicy(ctx context.Context, clientID, t
 		return "", err
 	}
 
+	if _, err := u.deploymentControl.CreateAccessPolicy(ctx, policy.ID, clientID, targetID, targetPort, projectID); err != nil {
+		return "", fmt.Errorf("failed to create GitOps access policy: %w", err)
+	}
+
 	return policy.ID, nil
 }
 
 func (u *serviceUsecaseImpl) DeleteAccessPolicy(ctx context.Context, policyID string) error {
-	return u.repository.DeleteAccessPolicy(ctx, policyID)
+
+	_, err := u.repository.GetAccessPolicyByID(ctx, policyID)
+	if err != nil {
+		return fmt.Errorf("access policy not found: %w", err)
+	}
+
+	if err := u.repository.DeleteAccessPolicy(ctx, policyID); err != nil {
+		return fmt.Errorf("failed to delete access policy from database: %w", err)
+	}
+
+	if err := u.deploymentControl.DeleteAccessPolicy(ctx, policyID); err != nil {
+		return fmt.Errorf("failed to delete GitOps access policy: %w", err)
+	}
+
+	return nil
+}
+
+func (u *serviceUsecaseImpl) ListAccessPolicies(ctx context.Context, targetID string) ([]AccessPolicyOutput, error) {
+	policies, err := u.repository.ListAccessPoliciesByTarget(ctx, targetID)
+	if err != nil {
+		return nil, err
+	}
+
+	outputs := make([]AccessPolicyOutput, len(policies))
+	for i, p := range policies {
+		outputs[i] = AccessPolicyOutput{
+			ID:         p.ID,
+			ClientID:   p.ClientID,
+			TargetID:   p.TargetID,
+			TargetPort: p.TargetPort,
+			ProjectID:  p.ProjectID,
+		}
+	}
+	return outputs, nil
 }
 
 func getExternalName(svc *domain.Service) string {

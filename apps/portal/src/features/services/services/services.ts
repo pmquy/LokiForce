@@ -63,3 +63,40 @@ export async function updateService(
     body: JSON.stringify({ name, description }),
   });
 }
+
+export interface AccessPolicy {
+  id: string;
+  client_id: string;
+  target_id: string;
+  target_port: string;
+  project_id: string;
+}
+
+export async function fetchAccessPolicies(
+  serviceId: string,
+): Promise<AccessPolicy[]> {
+  return apiRequest<AccessPolicy[]>(`/services/${serviceId}/policies`);
+}
+
+export async function createAccessPolicy(
+  clientId: string,
+  targetId: string,
+  targetPort: string,
+  projectId: string,
+): Promise<{ id: string }> {
+  return apiRequest<{ id: string }>("/services/policies", {
+    method: "POST",
+    body: JSON.stringify({
+      client_id: clientId,
+      target_id: targetId,
+      target_port: targetPort,
+      project_id: projectId,
+    }),
+  });
+}
+
+export async function deleteAccessPolicy(policyId: string): Promise<any> {
+  return apiRequest<any>(`/services/policies/${policyId}`, {
+    method: "DELETE",
+  });
+}

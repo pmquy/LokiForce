@@ -37,6 +37,7 @@ import (
 	"lokiforce.com/apps/core/internal/user/infrastructure/repository"
 	"lokiforce.com/apps/core/pkg/mail"
 	"lokiforce.com/apps/core/pkg/mq"
+	"lokiforce.com/apps/core/pkg/git"
 )
 
 func ProvideDB(cfg *config.Config) (*gorm.DB, error) {
@@ -62,6 +63,10 @@ func ProvideDB(cfg *config.Config) (*gorm.DB, error) {
 	return db, nil
 }
 
+func ProvideGitHubClient(cfg *config.Config) git.GitClient {
+	return git.NewGitHubClient(cfg.GitHub.Token, cfg.GitHub.Owner)
+}
+
 func ProvideTokenService(cfg *config.Config) application.TokenService {
 	return jwt.NewJWTService(cfg.JWT.Secret)
 }
@@ -70,6 +75,7 @@ func InitializeApp(cfg *config.Config) (*Handlers, error) {
 	wire.Build(
 		ProvideDB,
 		ProvideTokenService,
+		ProvideGitHubClient,
 		mq.NewInMemoryMQ,
 		mail.NewMockMailService,
 

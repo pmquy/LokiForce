@@ -93,3 +93,24 @@ images:
   - name: ghcr.io/{{.Owner}}/{{.ServiceName}}
     newTag: latest
 `
+
+const networkPolicyTemplate = `apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: policy-{{.PolicyID}}
+  namespace: {{.Namespace}}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{.TargetID}}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{.ClientID}}
+      ports:
+        - port: {{.TargetPort}}
+          protocol: TCP
+`

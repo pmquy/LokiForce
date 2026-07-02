@@ -131,3 +131,47 @@ func (h *ServiceHandler) ListTemplates(c *gin.Context) {
 
 	response.OK(c, out)
 }
+
+type createAccessPolicyRequest struct {
+	ClientID   string `json:"client_id" binding:"required"`
+	TargetID   string `json:"target_id" binding:"required"`
+	TargetPort string `json:"target_port" binding:"required"`
+	ProjectID  string `json:"project_id" binding:"required"`
+}
+
+func (h *ServiceHandler) CreateAccessPolicy(c *gin.Context) {
+	var req createAccessPolicyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	policyID, err := h.usecase.CreateAccessPolicy(c.Request.Context(), req.ClientID, req.TargetID, req.TargetPort, req.ProjectID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	response.Created(c, gin.H{"id": policyID})
+}
+
+func (h *ServiceHandler) DeleteAccessPolicy(c *gin.Context) {
+	id := c.Param("policyId")
+	if err := h.usecase.DeleteAccessPolicy(c.Request.Context(), id); err != nil {
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	response.OK(c, gin.H{"message": "access policy deleted successfully"})
+}
+
+func (h *ServiceHandler) ListAccessPolicies(c *gin.Context) {
+	targetID := c.Param("id")
+	policies, err := h.usecase.ListAccessPolicies(c.Request.Context(), targetID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	response.OK(c, policies)
+}

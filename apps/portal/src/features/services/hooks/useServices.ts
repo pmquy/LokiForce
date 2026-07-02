@@ -5,9 +5,13 @@ import {
   createService,
   deleteService,
   updateService,
+  fetchAccessPolicies,
+  createAccessPolicy,
+  deleteAccessPolicy,
   type Service,
   type Template,
   type CreateServiceOutput,
+  type AccessPolicy,
 } from "../services/services";
 
 export function useServicesQuery(projectId: string) {
@@ -88,3 +92,52 @@ export function useUpdateServiceMutation(
     onError,
   });
 }
+
+export function useAccessPoliciesQuery(serviceId: string) {
+  return useQuery<AccessPolicy[]>({
+    queryKey: ["accessPolicies", serviceId],
+    queryFn: () => fetchAccessPolicies(serviceId),
+    enabled: !!serviceId,
+  });
+}
+
+export function useCreateAccessPolicyMutation(
+  serviceId: string,
+  onSuccess: () => void,
+  onError: (err: any) => void,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      clientId,
+      targetPort,
+      projectId,
+    }: {
+      clientId: string;
+      targetPort: string;
+      projectId: string;
+    }) => createAccessPolicy(clientId, serviceId, targetPort, projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["accessPolicies", serviceId] });
+      onSuccess();
+    },
+    onError,
+  });
+}
+
+export function useDeleteAccessPolicyMutation(
+  serviceId: string,
+  onSuccess: () => void,
+  onError: (err: any) => void,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (policyId: string) => deleteAccessPolicy(policyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["accessPolicies", serviceId] });
+      onSuccess();
+    },
+    onError,
+  });
+}
+

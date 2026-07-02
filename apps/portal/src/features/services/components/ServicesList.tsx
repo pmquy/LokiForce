@@ -7,6 +7,9 @@ import {
   useCreateServiceMutation,
   useDeleteServiceMutation,
   useUpdateServiceMutation,
+  useAccessPoliciesQuery,
+  useCreateAccessPolicyMutation,
+  useDeleteAccessPolicyMutation,
 } from "../hooks/useServices";
 import { type Service } from "../services/services";
 import {
@@ -23,7 +26,9 @@ import {
   ExternalLink,
   Trash2,
   Pencil,
+  Shield,
 } from "lucide-react";
+
 
 export function ServicesList() {
   const [selectedOrgId, setSelectedOrgId] = useState<string>("");
@@ -46,6 +51,12 @@ export function ServicesList() {
   const [errorMsg, setErrorMsg] = useState("");
   const [generatedRepoUrl, setGeneratedRepoUrl] = useState("");
   const [copied, setCopied] = useState(false);
+
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [policyClientId, setPolicyClientId] = useState("");
+  const [policyPort, setPolicyPort] = useState("8080");
+  const [policyErrorMsg, setPolicyErrorMsg] = useState("");
 
   const { data: orgs, isLoading: orgsLoading } = useOrganizationsQuery();
 
@@ -116,6 +127,44 @@ export function ServicesList() {
       setEditErrorMsg(err.message || "Failed to update service");
     },
   );
+
+  const { data: policies, isLoading: policiesLoading } = useAccessPoliciesQuery(
+    selectedService?.ID || "",
+  );
+
+  const createPolicyMutation = useCreateAccessPolicyMutation(
+    selectedService?.ID || "",
+    () => {
+      setPolicyClientId("");
+      setPolicyErrorMsg("");
+    },
+    (err) => {
+      setPolicyErrorMsg(err.message || "Failed to create access policy");
+    },
+  );
+
+  const deletePolicyMutation = useDeleteAccessPolicyMutation(
+    selectedService?.ID || "",
+    () => {
+      setPolicyErrorMsg("");
+    },
+    (err) => {
+      setPolicyErrorMsg(err.message || "Failed to delete access policy");
+    },
+  );
+
+  const handleAddPolicy = () => {
+    if (!policyClientId || !policyPort || !selectedService) return;
+    createPolicyMutation.mutate({
+      clientId: policyClientId,
+      targetPort: policyPort,
+      projectId: selectedProjId,
+    });
+  };
+
+  const handleDeletePolicy = (policyId: string) => {
+    deletePolicyMutation.mutate(policyId);
+  };
 
   const handleEditClick = (svc: Service) => {
     setServiceToEdit(svc);
@@ -253,6 +302,16 @@ export function ServicesList() {
                     </span>
                   </div>
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setSelectedService(svc);
+                        setDetailModalOpen(true);
+                      }}
+                      className="p-2 bg-slate-800/50 hover:bg-emerald-500/10 border border-slate-800 hover:border-emerald-500/20 text-slate-400 hover:text-emerald-400 rounded-xl transition-all cursor-pointer"
+                      title="Access Control"
+                    >
+                      <Shield className="h-4 w-4" />
+                    </button>
                     <button
                       onClick={() => handleEditClick(svc)}
                       className="p-2 bg-slate-800/50 hover:bg-indigo-500/10 border border-slate-800 hover:border-indigo-500/20 text-slate-400 hover:text-indigo-400 rounded-xl transition-all cursor-pointer"
@@ -606,6 +665,179 @@ export function ServicesList() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Access Policies / Detail Modal */}
+      {detailModalOpen && selectedService && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative flex flex-col max-h-[85vh]">
+            <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl">
+                  <Shield className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white leading-tight">
+                    {selectedService.Name}
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Access & Network Security Policies
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setDetailModalOpen(false);
+                  setSelectedService(null);
+                  setPolicyErrorMsg("");
+                }}
+                className="text-slate-400 hover:text-slate-200 cursor-pointer"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-6 flex-1">
+              {/* Service Info Summary */}
+              <div className="bg-slate-950/50 border border-slate-850 rounded-2xl p-4 space-y-3">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Service Metadata</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-slate-400 block text-xs">Service ID</span>
+                    <span className="text-slate-200 font-mono text-xs">{selectedService.ID}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-xs">Template Type</span>
+                    <span className="text-slate-200 capitalize font-medium">{selectedService.TemplateID}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Policies List & Form */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    Inbound Traffic Rules
+                  </h4>
+                </div>
+
+                {policyErrorMsg && (
+                  <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4 text-sm text-rose-400 flex gap-2">
+                    <AlertCircle className="h-5 w-5 shrink-0" />
+                    {policyErrorMsg}
+                  </div>
+                )}
+
+                {/* Add Policy Form */}
+                <div className="bg-slate-950/30 border border-slate-800/80 rounded-2xl p-4 space-y-4">
+                  <h5 className="text-xs font-bold text-slate-400">Allow service to access {selectedService.Name}</h5>
+                  <div className="flex flex-col md:flex-row gap-3">
+                    <div className="flex-1">
+                      <select
+                        value={policyClientId}
+                        onChange={(e) => setPolicyClientId(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-sm"
+                      >
+                        <option value="">-- Select Client Service --</option>
+                        {services
+                          ?.filter((s) => s.ID !== selectedService.ID)
+                          ?.map((s) => (
+                            <option key={s.ID} value={s.ID}>
+                              {s.Name} ({s.ID.slice(0, 8)})
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <div className="w-full md:w-32">
+                      <input
+                        type="text"
+                        placeholder="Port"
+                        value={policyPort}
+                        onChange={(e) => setPolicyPort(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-sm font-mono"
+                      />
+                    </div>
+                    <button
+                      onClick={handleAddPolicy}
+                      disabled={createPolicyMutation.isPending || !policyClientId || !policyPort}
+                      className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      {createPolicyMutation.isPending ? (
+                        <Loader2 className="animate-spin h-4 w-4" />
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4" />
+                          Allow
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Policies List */}
+                {policiesLoading ? (
+                  <div className="py-8 flex justify-center">
+                    <Loader2 className="h-6 w-6 text-indigo-500 animate-spin" />
+                  </div>
+                ) : policies && policies.length > 0 ? (
+                  <div className="space-y-2.5">
+                    {policies.map((policy) => {
+                      const clientService = services?.find((s) => s.ID === policy.client_id);
+                      return (
+                        <div
+                          key={policy.id}
+                          className="flex items-center justify-between p-3.5 bg-slate-950/40 border border-slate-850 rounded-2xl"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                            <div>
+                              <span className="text-sm font-semibold text-slate-200">
+                                {clientService ? clientService.Name : `Unknown (${policy.client_id.slice(0, 8)})`}
+                              </span>
+                              <span className="text-xs text-slate-400 block mt-0.5">
+                                Allowed to call port <span className="font-mono text-indigo-400">{policy.target_port}</span>
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleDeletePolicy(policy.id)}
+                            disabled={deletePolicyMutation.isPending}
+                            className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all cursor-pointer"
+                            title="Remove Rule"
+                          >
+                            {deletePolicyMutation.isPending ? (
+                              <Loader2 className="animate-spin h-4 w-4" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 border border-dashed border-slate-800 rounded-2xl text-slate-500 space-y-1">
+                    <Shield className="h-6 w-6 mx-auto text-slate-600 mb-1" />
+                    <p className="text-xs font-semibold">No Traffic Rules Defined</p>
+                    <p className="text-[11px] text-slate-500">This service is isolated from external traffic inside the cluster.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-800 bg-slate-950/20 flex justify-end">
+              <button
+                onClick={() => {
+                  setDetailModalOpen(false);
+                  setSelectedService(null);
+                  setPolicyErrorMsg("");
+                }}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-300 text-sm font-semibold rounded-xl transition-colors cursor-pointer"
+              >
+                Close Settings
+              </button>
+            </div>
           </div>
         </div>
       )}

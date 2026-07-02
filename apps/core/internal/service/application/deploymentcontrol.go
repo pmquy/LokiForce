@@ -13,6 +13,6 @@ type DeploymentConfig struct {
 type DeploymentControl interface {
 	RegisterDeployment(ctx context.Context, config DeploymentConfig) (string, error)
 	DeleteDeployment(ctx context.Context, serviceName string) error
-	CreateAccessPolicy(ctx context.Context, clientID, targetID, targetPort, projectID string) (string, error)
+	CreateAccessPolicy(ctx context.Context, policyID, clientID, targetID, targetPort, projectID string) (string, error)
 	DeleteAccessPolicy(ctx context.Context, policyID string) error
 }

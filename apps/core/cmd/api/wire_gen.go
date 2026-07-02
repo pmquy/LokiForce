@@ -28,6 +28,7 @@ import (
 	"lokiforce.com/apps/core/internal/user/delivery/http"
 	"lokiforce.com/apps/core/internal/user/infrastructure/jwt"
 	"lokiforce.com/apps/core/internal/user/infrastructure/repository"
+	"lokiforce.com/apps/core/pkg/git"
 	"lokiforce.com/apps/core/pkg/mail"
 	"lokiforce.com/apps/core/pkg/mq"
 )
@@ -55,8 +56,9 @@ func InitializeApp(cfg *config.Config) (*Handlers, error) {
 	teamUsecase := application4.NewTeamUsecase(postgresTeamRepository)
 	teamHandler := http4.NewTeamHandler(teamUsecase)
 	postgresServiceRepository := repository5.NewPostgresServiceRepository(db)
-	versionControl := versioncontrol.NewGitHubVersionControl(cfg)
-	deploymentControl := deployment.NewArgoCDDeployment(cfg)
+	gitClient := ProvideGitHubClient(cfg)
+	versionControl := versioncontrol.NewGitHubVersionControl(cfg, gitClient)
+	deploymentControl := deployment.NewArgoCDDeployment(cfg, gitClient)
 	serviceUsecase := application5.NewServiceUsecase(postgresServiceRepository, versionControl, deploymentControl)
 	serviceHandler := http5.NewServiceHandler(serviceUsecase)
 	handlers := NewHandlers(userHandler, orgHandler, projectHandler, teamHandler, serviceHandler)
@@ -86,6 +88,10 @@ func ProvideDB(cfg *config.Config) (*gorm.DB, error) {
 		return nil, err
 	}
 	return db, nil
+}
+
+func ProvideGitHubClient(cfg *config.Config) git.GitClient {
+	return git.NewGitHubClient(cfg.GitHub.Token, cfg.GitHub.Owner)
 }
 
 func ProvideTokenService(cfg *config.Config) application.TokenService {

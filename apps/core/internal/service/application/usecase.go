@@ -36,6 +36,14 @@ type UpdateServiceInput struct {
 	Description string
 }
 
+type AccessPolicyOutput struct {
+	ID         string `json:"id"`
+	ClientID   string `json:"client_id"`
+	TargetID   string `json:"target_id"`
+	TargetPort string `json:"target_port"`
+	ProjectID  string `json:"project_id"`
+}
+
 type ServiceUsecase interface {
 	CreateService(ctx context.Context, input CreateServiceInput) (CreateServiceOutput, error)
 	GetServiceByID(ctx context.Context, id string) (ServiceOutput, error)
@@ -44,6 +52,7 @@ type ServiceUsecase interface {
 	DeleteService(ctx context.Context, id string) error
 
 	ListTemplates(ctx context.Context) ([]Template, error)
-	CreateAccessPolicy(ctx context.Context, clientID, targetID, targetPort, projectID string) (string, error)
+	CreateAccessPolicy(ctx context.Context, clientID, targetID, targetPort, namespace string) (string, error)
 	DeleteAccessPolicy(ctx context.Context, policyID string) error
+	ListAccessPolicies(ctx context.Context, targetID string) ([]AccessPolicyOutput, error)
 }
