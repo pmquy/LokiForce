@@ -7,6 +7,7 @@ type DeploymentConfig struct {
 	RepositoryURL string
 	Namespace     string
 	Environment   string
+	TemplateID    string
 }
 
 type DeploymentControl interface {

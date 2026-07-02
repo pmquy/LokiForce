@@ -90,6 +90,7 @@ func (u *serviceUsecaseImpl) CreateService(ctx context.Context, input CreateServ
 		RepositoryURL: repoURL,
 		Namespace:     input.ProjectID,
 		Environment:   "production",
+		TemplateID:    input.TemplateID,
 	}
 	_, err = u.deploymentControl.RegisterDeployment(ctx, deployConfig)
 	if err != nil {

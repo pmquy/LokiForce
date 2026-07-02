@@ -184,6 +184,9 @@ func copyToMemFS(src string, fs billy.Filesystem, dst string, data any) error {
 	}
 
 	for _, entry := range entries {
+		if entry.Name() == "deploy" {
+			continue
+		}
 		srcPath := filepath.Join(src, entry.Name())
 		dstPath := filepath.Join(dst, entry.Name())
 
