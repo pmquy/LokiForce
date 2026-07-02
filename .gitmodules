@@ -1,0 +1,3 @@
+[submodule "gitops-infra"]
+	path = gitops-infra
+	url = https://github.com/quymk1/gitops-infra
