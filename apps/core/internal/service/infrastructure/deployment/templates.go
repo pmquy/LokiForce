@@ -12,11 +12,6 @@ kind: Application
 metadata:
   name: {{.ServiceName}}
   namespace: argocd
-  annotations:
-    argocd-image-updater.argoproj.io/image-list: app=ghcr.io/{{.Owner}}/{{.ServiceName}}
-    argocd-image-updater.argoproj.io/app.update-strategy: latest
-    argocd-image-updater.argoproj.io/write-back-method: git:kustomize
-    argocd-image-updater.argoproj.io/write-back-path: manifests/{{.ServiceName}}
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
