@@ -44,4 +44,6 @@ type ServiceUsecase interface {
 	DeleteService(ctx context.Context, id string) error
 
 	ListTemplates(ctx context.Context) ([]Template, error)
+	CreateAccessPolicy(ctx context.Context, clientID, targetID, targetPort, projectID string) (string, error)
+	DeleteAccessPolicy(ctx context.Context, policyID string) error
 }

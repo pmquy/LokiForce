@@ -65,7 +65,7 @@ func (u *serviceUsecaseImpl) CreateService(ctx context.Context, input CreateServ
 		return CreateServiceOutput{}, err
 	}
 
-	repoName := svc.GetExternalName()
+	repoName := getExternalName(svc)
 	slog.Info("Creating Git repository", "name", repoName)
 	repoConfig := RepositoryConfig{
 		Name:        repoName,
@@ -88,7 +88,7 @@ func (u *serviceUsecaseImpl) CreateService(ctx context.Context, input CreateServ
 	deployConfig := DeploymentConfig{
 		ServiceName:   repoName,
 		RepositoryURL: repoURL,
-		Namespace:     input.ProjectID,
+		Namespace:     getExternalNamespace(svc),
 		Environment:   "production",
 		TemplateID:    input.TemplateID,
 	}
@@ -162,7 +162,7 @@ func (u *serviceUsecaseImpl) DeleteService(ctx context.Context, id string) error
 		return err
 	}
 
-	repoName := svc.GetExternalName()
+	repoName := getExternalName(svc)
 	if repoName != "" {
 		if err := u.deploymentControl.DeleteDeployment(ctx, repoName); err != nil {
 			slog.Error("Failed to delete Argo CD deployment during service deletion", "repo", repoName, "error", err)
@@ -178,4 +178,35 @@ func (u *serviceUsecaseImpl) DeleteService(ctx context.Context, id string) error
 
 func (u *serviceUsecaseImpl) ListTemplates(ctx context.Context) ([]Template, error) {
 	return AvailableTemplates, nil
+}
+
+func (u *serviceUsecaseImpl) CreateAccessPolicy(ctx context.Context, clientID, targetID, targetPort, projectID string) (string, error) {
+	policy, err := domain.NewAccessPolicy(uuid.NewString(), clientID, targetID, targetPort, projectID)
+	if err != nil {
+		return "", err
+	}
+
+	if err := u.repository.CreateAccessPolicy(ctx, policy); err != nil {
+		return "", err
+	}
+
+	return policy.ID, nil
+}
+
+func (u *serviceUsecaseImpl) DeleteAccessPolicy(ctx context.Context, policyID string) error {
+	return u.repository.DeleteAccessPolicy(ctx, policyID)
+}
+
+func getExternalName(svc *domain.Service) string {
+	if svc == nil {
+		return ""
+	}
+	return svc.ID
+}
+
+func getExternalNamespace(svc *domain.Service) string {
+	if svc == nil {
+		return ""
+	}
+	return svc.ProjectID
 }

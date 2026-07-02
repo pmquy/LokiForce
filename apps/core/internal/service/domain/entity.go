@@ -30,6 +30,32 @@ func NewService(id, name, description, projectID, templateID string) (*Service, 
 	}, nil
 }
 
-func (s *Service) GetExternalName() string {
-	return s.ID
+type AccessPolicy struct {
+	ID         string
+	ClientID   string
+	TargetID   string
+	TargetPort string
+	ProjectID  string
+}
+
+func NewAccessPolicy(id, clientID, targetID, targetPort, projectID string) (*AccessPolicy, error) {
+	if clientID == "" {
+		return nil, errors.New("client ID cannot be empty")
+	}
+	if targetID == "" {
+		return nil, errors.New("target ID cannot be empty")
+	}
+	if targetPort == "" {
+		return nil, errors.New("target port cannot be empty")
+	}
+	if projectID == "" {
+		return nil, errors.New("project ID cannot be empty")
+	}
+	return &AccessPolicy{
+		ID:         id,
+		ClientID:   clientID,
+		TargetID:   targetID,
+		TargetPort: targetPort,
+		ProjectID:  projectID,
+	}, nil
 }

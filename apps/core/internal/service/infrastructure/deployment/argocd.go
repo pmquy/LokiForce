@@ -9,8 +9,6 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"os"
-	"path/filepath"
 	"text/template"
 
 	"lokiforce.com/apps/core/internal/config"
@@ -48,34 +46,16 @@ func (a *ArgoCDDeployment) RegisterDeployment(ctx context.Context, config applic
 		"Namespace":   config.Namespace,
 	}
 
-	templateDir := "./templates/k8s"
-	entries, err := os.ReadDir(templateDir)
-	if err != nil {
-		return "", fmt.Errorf("failed to read template directory %s: %w", templateDir, err)
-	}
-
 	filesToWrite := make(map[string]string)
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-
-		fileName := entry.Name()
-		filePath := filepath.Join(templateDir, fileName)
-
-		fileBytes, err := os.ReadFile(filePath)
+	for fileName, rawTemplate := range TemplatesMap {
+		tmpl, err := template.New(fileName).Parse(rawTemplate)
 		if err != nil {
-			return "", fmt.Errorf("failed to read template file %s: %w", filePath, err)
-		}
-
-		tmpl, err := template.New(fileName).Parse(string(fileBytes))
-		if err != nil {
-			return "", fmt.Errorf("failed to parse template file %s: %w", fileName, err)
+			return "", fmt.Errorf("failed to parse template %s: %w", fileName, err)
 		}
 
 		var buf bytes.Buffer
 		if err := tmpl.Execute(&buf, data); err != nil {
-			return "", fmt.Errorf("failed to execute template file %s: %w", fileName, err)
+			return "", fmt.Errorf("failed to execute template %s: %w", fileName, err)
 		}
 
 		var destPath string
@@ -141,18 +121,8 @@ func (a *ArgoCDDeployment) DeleteDeployment(ctx context.Context, serviceName str
 		return fmt.Errorf("github token is empty: authorization failed")
 	}
 
-	templateDir := "./templates/k8s"
-	entries, err := os.ReadDir(templateDir)
-	if err != nil {
-		return fmt.Errorf("failed to read template directory %s: %w", templateDir, err)
-	}
-
 	var filesToDelete []string
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		fileName := entry.Name()
+	for fileName := range TemplatesMap {
 		var relPath string
 		if fileName == "argocd.yaml" {
 			relPath = fmt.Sprintf("apps/%s-argocd.yaml", serviceName)
@@ -239,5 +209,13 @@ func (a *ArgoCDDeployment) DeleteDeployment(ctx context.Context, serviceName str
 	}
 
 	slog.Info("Argo CD and K8s manifests deleted from remote GitOps repo successfully", "serviceName", serviceName)
+	return nil
+}
+
+func (a *ArgoCDDeployment) CreateAccessPolicy(ctx context.Context, clientID, targetID, targetPort, projectID string) (string, error) {
+	return "", nil
+}
+
+func (a *ArgoCDDeployment) DeleteAccessPolicy(ctx context.Context, policyID string) error {
 	return nil
 }
