@@ -40,7 +40,7 @@ const deploymentTemplate = `apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{.ServiceName}}
-  namespace: production
+  namespace: {{.Namespace}}
   labels:
     app: {{.ServiceName}}
 spec:
@@ -71,7 +71,7 @@ const serviceTemplate = `apiVersion: v1
 kind: Service
 metadata:
   name: {{.ServiceName}}
-  namespace: production
+  namespace: {{.Namespace}}
   labels:
     app: {{.ServiceName}}
 spec:
