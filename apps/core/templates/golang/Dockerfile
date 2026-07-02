@@ -1,16 +1,13 @@
 # ==========================
 # Builder Stage
 # ==========================
-FROM golang:1.21-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /app
 
-# Download dependencies trước để tận dụng Docker cache
-COPY go.* ./
-RUN go mod download
-
-# Copy source
+# Copy source and resolve dependencies
 COPY . .
+RUN go mod tidy && go mod download
 
 # Build static binary
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
