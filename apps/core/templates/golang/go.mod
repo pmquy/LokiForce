@@ -1,3 +1,3 @@
 module lokiforce.com/apps/{{.ServiceName}}
 
-go 1.22
+go 1.21
