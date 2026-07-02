@@ -6,7 +6,7 @@ FROM golang:1.21-alpine AS builder
 WORKDIR /app
 
 # Download dependencies trước để tận dụng Docker cache
-COPY go.mod go.sum ./
+COPY go.* ./
 RUN go mod download
 
 # Copy source

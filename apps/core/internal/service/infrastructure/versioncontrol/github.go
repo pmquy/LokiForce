@@ -26,16 +26,18 @@ import (
 )
 
 type GitHubVersionControl struct {
-	token  string
-	owner  string
-	prefix string
+	token      string
+	owner      string
+	prefix     string
+	gitopsRepo string
 }
 
 func NewGitHubVersionControl(cfg *config.Config) application.VersionControl {
 	return &GitHubVersionControl{
-		token:  cfg.GitHub.Token,
-		owner:  cfg.GitHub.Owner,
-		prefix: cfg.GitHub.Prefix,
+		token:      cfg.GitHub.Token,
+		owner:      cfg.GitHub.Owner,
+		prefix:     cfg.GitHub.Prefix,
+		gitopsRepo: cfg.GitHub.GitOpsRepo,
 	}
 }
 
@@ -105,6 +107,8 @@ func (g *GitHubVersionControl) PushFiles(ctx context.Context, repoURL string, te
 	data := map[string]any{
 		"ServiceName": serviceName,
 		"Port":        "8080",
+		"Owner":       g.owner,
+		"GitOpsRepo":  g.gitopsRepo,
 	}
 
 	if err := copyToMemFS(templateDir, fs, "", data); err != nil {

@@ -53,7 +53,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: lokiforce-dev/{{.ServiceName}}:latest
+          image: ghcr.io/{{.Owner}}/{{.ServiceName}}:latest
           ports:
             - containerPort: 8080
           resources:
@@ -80,6 +80,16 @@ spec:
   selector:
     app: {{.ServiceName}}
   type: ClusterIP
+`
+
+const kustomizationTemplate = `apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+  - service.yaml
+images:
+  - name: ghcr.io/{{.Owner}}/{{.ServiceName}}
+    newTag: latest
 `
 
 const argocdTemplate = `apiVersion: argoproj.io/v1alpha1
@@ -144,10 +154,16 @@ func (a *ArgoCDDeployment) RegisterDeployment(ctx context.Context, config applic
 		return "", fmt.Errorf("failed to render service template: %w", err)
 	}
 
+	kustomizationYaml, err := renderStrTemplate("kustomization", kustomizationTemplate)
+	if err != nil {
+		return "", fmt.Errorf("failed to render kustomization template: %w", err)
+	}
+
 	filesToWrite := map[string]string{
-		fmt.Sprintf("apps/%s-argocd.yaml", config.ServiceName):          argocdYaml,
-		fmt.Sprintf("manifests/%s/deployment.yaml", config.ServiceName): deploymentYaml,
-		fmt.Sprintf("manifests/%s/service.yaml", config.ServiceName):    serviceYaml,
+		fmt.Sprintf("apps/%s-argocd.yaml", config.ServiceName):                 argocdYaml,
+		fmt.Sprintf("manifests/%s/deployment.yaml", config.ServiceName):         deploymentYaml,
+		fmt.Sprintf("manifests/%s/service.yaml", config.ServiceName):            serviceYaml,
+		fmt.Sprintf("manifests/%s/kustomization.yaml", config.ServiceName):      kustomizationYaml,
 	}
 
 	writeRemoteFile := func(path string, content string) error {
@@ -207,6 +223,7 @@ func (a *ArgoCDDeployment) DeleteDeployment(ctx context.Context, serviceName str
 		fmt.Sprintf("apps/%s-argocd.yaml", serviceName),
 		fmt.Sprintf("manifests/%s/deployment.yaml", serviceName),
 		fmt.Sprintf("manifests/%s/service.yaml", serviceName),
+		fmt.Sprintf("manifests/%s/kustomization.yaml", serviceName),
 	}
 
 	deleteRemoteFile := func(path string) error {
