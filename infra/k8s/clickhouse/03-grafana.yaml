@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: observability
+data:
+  clickhouse.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: ClickHouse
+        type: grafana-clickhouse-datasource
+        uid: clickhouse-data-source
+        access: proxy
+        editable: true
+        jsonData:
+          host: clickhouse.observability.svc
+          port: 9000
+          protocol: native
+          secure: false
+          username: clickhouse
+          database: lokiforce
+          tlsSkipVerify: true
+        secureJsonData:
+          password: clickhouse123
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: observability
+  labels:
+    app: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:10.4.2
+          env:
+            - name: GF_INSTALL_PLUGINS
+              value: "grafana-clickhouse-datasource"
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              value: "adminpassword"
+          ports:
+            - containerPort: 3000
+              name: http
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - name: provisioning
+              mountPath: /etc/grafana/provisioning/datasources
+      volumes:
+        - name: provisioning
+          configMap:
+            name: grafana-datasources
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: observability
+spec:
+  ports:
+    - port: 3000
+      targetPort: 3000
+      name: http
+  selector:
+    app: grafana

@@ -65,7 +65,7 @@ spec:
 const serviceTemplate = `apiVersion: v1
 kind: Service
 metadata:
-  name: {{.ServiceName}}
+  name: svc-{{.ServiceName}}
   namespace: {{.Namespace}}
   labels:
     app: {{.ServiceName}}

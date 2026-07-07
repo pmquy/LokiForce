@@ -24,6 +24,7 @@ data:
         username: clickhouse
         password: clickhouse123
         ttl: 24h
+      debug: {}
     service:
       pipelines:
         traces:
@@ -34,6 +35,10 @@ data:
           receivers: [otlp]
           processors: [batch]
           exporters: [clickhouse]
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [clickhouse, debug]
 ---
 apiVersion: apps/v1
 kind: Deployment

@@ -4,3 +4,5 @@ resources:
   - 00-namespace.yaml
   - 01-clickhouse.yaml
   - 02-otel-collector.yaml
+  - 03-grafana.yaml
+  - 04-vector.yaml
